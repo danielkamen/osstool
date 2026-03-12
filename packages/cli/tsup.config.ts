@@ -14,5 +14,6 @@ export default defineConfig([
     entry: ["src/postinstall.ts"],
     format: ["cjs"],
     dts: false,
+    noExternal: ["@contrib-provenance/core"],
   },
 ]);

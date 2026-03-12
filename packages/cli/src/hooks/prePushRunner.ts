@@ -13,6 +13,7 @@ import {
   getDefaultBranch,
   getHeadSha,
   TOOL_VERSION,
+  ensureProvenanceSetup,
 } from "@contrib-provenance/core";
 import type {
   ProvenanceMetrics,
@@ -87,6 +88,9 @@ function mergeMetrics(
 export async function runPrePush(repoRoot: string): Promise<void> {
   const provDir = getProvenanceDir(repoRoot);
   if (!existsSync(provDir)) return;
+
+  // Ensure directories exist (lazy init — defense in depth)
+  await ensureProvenanceSetup(repoRoot);
 
   // Read config to get base branch
   let baseBranch = "main";

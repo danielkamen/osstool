@@ -101,6 +101,19 @@ export async function getDefaultBranch(repoRoot: string): Promise<string> {
   }
 }
 
+export async function getGitHooksDir(repoRoot: string): Promise<string> {
+  try {
+    const custom = await getGitConfig("core.hooksPath", repoRoot);
+    if (custom) {
+      const { resolve } = await import("node:path");
+      return resolve(repoRoot, custom);
+    }
+  } catch {
+    // Fall through to default
+  }
+  return join(repoRoot, ".git", "hooks");
+}
+
 export function parseRemoteToSlug(remoteUrl: string): string {
   // Handle SSH: git@github.com:owner/repo.git
   const sshMatch = remoteUrl.match(/^git@([^:]+):(.+?)(?:\.git)?$/);

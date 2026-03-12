@@ -6,7 +6,7 @@ import { StatusBarController } from "./StatusBarController.js";
 import { TestRunWatcher } from "./TestRunWatcher.js";
 import { registerCommands, registerInitCommand } from "./CommandRegistrar.js";
 import { getWorkspaceRoot } from "./EditorBridge.js";
-import { PROVENANCE_DIR } from "@contrib-provenance/core";
+import { PROVENANCE_DIR, ensureProvenanceSetup } from "@contrib-provenance/core";
 
 let tracker: SessionTracker | undefined;
 let statusBar: StatusBarController | undefined;
@@ -21,6 +21,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   const configPath = join(workspaceRoot, PROVENANCE_DIR, "config.json");
   if (!existsSync(configPath)) return;
+
+  // Ensure directories and hooks are set up (defense in depth)
+  try {
+    const status = await ensureProvenanceSetup(workspaceRoot);
+    if (status.hooksInstalled) {
+      vscode.window.showInformationMessage(
+        "Contribution Provenance: git hooks installed for this repository."
+      );
+    }
+  } catch {
+    // Non-fatal — tracking still works without hooks
+  }
 
   // Read extension settings
   const config = vscode.workspace.getConfiguration("provenance");

@@ -13,13 +13,14 @@ export function renderComment(
   result: RenderInput,
   confidence: ConfidenceLevel,
   _config: ProvenanceYmlConfig,
+  serverMetrics?: GitDerivedMetrics | null,
 ): string {
   const a = result.attestation;
   const icon = { high: "\u2705", medium: "\u26a0\ufe0f", low: "\ud83d\udfe1" }[confidence];
   const label = {
-    high: "Strong editing activity",
-    medium: "Moderate editing activity",
-    low: "Light editing activity",
+    high: "\ud83e\uddd1\u200d\ud83d\udcbb Human",
+    medium: "\ud83e\udd16 Cyborg",
+    low: "\ud83e\udd16 Bot",
   }[confidence];
 
   const signalLabel = a.session.signal_source
@@ -37,16 +38,18 @@ export function renderComment(
 | **Tracked by** | ${a.session.signal_source ?? "vscode"}${signalLabel} |
 | **Activity level** | ${label} |
 | **Active editing time** | ${a.session.dwell_minutes} min across ${a.session.active_files} files |
-| **Edit complexity** | ${a.session.entropy_score} |
 | **Change spread** | ${a.session.edit_displacement_sum} |
 | **Pace variation** | ${a.session.temporal_jitter_ms} ms |
 | **Test runs** | ${a.session.test_runs_total} (${a.session.test_failures_observed} failed, ${Math.round(a.session.test_failure_ratio * 100)}% failure rate) |`;
 
-  if (a.session.commit_count !== undefined) {
-    body += `\n| **Commits** | ${a.session.commit_count} |`;
+  if (serverMetrics?.hottest_file) {
+    body += `\n| **Hottest file** | \`${serverMetrics.hottest_file}\` |`;
   }
-  if (a.session.diff_churn !== undefined) {
-    body += `\n| **Diff churn** | ${a.session.diff_churn} lines |`;
+  if (serverMetrics?.file_types_summary) {
+    body += `\n| **File types** | ${serverMetrics.file_types_summary} |`;
+  }
+  if (serverMetrics?.add_delete_ratio) {
+    body += `\n| **Add/Delete ratio** | ${serverMetrics.add_delete_ratio} |`;
   }
 
   body += `\n| **AI disclosure** | ${a.disclosure ?? "None provided"} |
@@ -75,27 +78,61 @@ export function renderServerOnlyReport(
 ): string {
   const icon = { high: "\u2705", medium: "\u26a0\ufe0f", low: "\ud83d\udfe1" }[confidence];
 
-  return `## ${icon} Contribution Provenance Report (Server-Computed)
+  const activityLabel = { high: "\ud83e\uddd1\u200d\ud83d\udcbb Human", medium: "\u26a1 Mixed signals", low: "\ud83e\udd16 Likely automated" }[confidence];
+  const churn = serverMetrics.diff_churn ?? 0;
+  const commits = serverMetrics.commit_count ?? 0;
 
-| Field | Value |
-|-------|-------|
-| **Tracked by** | server (computed from PR data) |
-| **Activity level** | ${confidence.toUpperCase()} |
-| **Estimated active time** | ${serverMetrics.dwell_minutes} min across ${serverMetrics.active_files} files |
-| **Edit complexity** | ${serverMetrics.entropy_score} |
-| **Commits** | ${serverMetrics.commit_count} |
-| **Diff churn** | ${serverMetrics.diff_churn} lines |
+  let body = `## ${icon} Contribution Provenance Report (Server-Computed)
 
-<sub>This report was computed from PR metadata. Install \`@contrib-provenance/cli\` as a devDependency for richer contributor-side metrics.</sub>
-<!-- provenance-summary-v1 -->`.trim();
+| | |
+|---|---|
+| \ud83d\udce1 **Source** | Server (computed from PR data) |
+| ${icon} **Activity** | ${activityLabel} |
+| \u23f1\ufe0f **Estimated active time** | ${serverMetrics.dwell_minutes} min across ${serverMetrics.active_files} file(s) |
+| \ud83d\udcdd **Commits** | ${commits} |
+| \ud83d\udd00 **Diff churn** | ${churn} lines |
+| \ud83c\udfaf **Pace variation** | ${serverMetrics.commit_temporal_jitter_ms} ms |`;
+
+  if (serverMetrics.hottest_file) {
+    body += `\n| \ud83d\udd25 **Hottest file** | \`${serverMetrics.hottest_file}\` |`;
+  }
+  if (serverMetrics.file_types_summary) {
+    body += `\n| \ud83d\udcc2 **File types** | ${serverMetrics.file_types_summary} |`;
+  }
+  if (serverMetrics.add_delete_ratio) {
+    body += `\n| \u2696\ufe0f **Add/Delete ratio** | ${serverMetrics.add_delete_ratio} |`;
+  }
+
+  body += `
+
+> \ud83d\udca1 **Want richer metrics?** Run \`npx provenance doctor --fix\` in your clone, or install the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=caiman.contrib-provenance-vscode) for automatic keystroke-level tracking.
+
+<sub>This report was computed from PR metadata only. Contributor-side attestation provides editing patterns, test runs, and signed proof.</sub>
+<!-- provenance-summary-v1 -->`;
+
+  return body.trim();
 }
 
 export function renderReminder(_config: ProvenanceYmlConfig): string {
   return `## \ud83d\udccb Contribution Provenance
 
-No attestation found for this PR.
+No attestation found for this PR. This usually means git hooks weren't set up.
 
-Contribution provenance is **automatic** when \`@contrib-provenance/cli\` is installed as a devDependency. Just \`npm install\` and push normally \u2014 provenance attaches automatically via git hooks.
+### \ud83d\udd27 Quick fix
+
+Run this in your local clone and push again:
+
+\`\`\`sh
+npx provenance doctor --fix
+\`\`\`
+
+### Why did this happen?
+
+Provenance attaches automatically via a **pre-push git hook**. The hook is installed when:
+- \`npm install\` runs and \`@contrib-provenance/cli\` is a devDependency, or
+- The [VS Code extension](https://marketplace.visualstudio.com/items?itemName=caiman.contrib-provenance-vscode) detects \`.provenance/config.json\`
+
+If neither happened, the hook is missing and no attestation gets created.
 
 <sub>This is a gentle reminder, not a requirement. PRs without attestation are reviewed normally.</sub>
 <!-- provenance-summary-v1 -->`.trim();

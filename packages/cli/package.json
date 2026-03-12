@@ -8,7 +8,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsup",
-    "postinstall": "node -e \"try{require('./dist/postinstall.js')}catch{}\"",
+    "postinstall": "node -e \"try{require('./dist/postinstall.js')}catch(e){process.stderr.write('contrib-provenance: '+((e&&e.message)||'setup skipped')+'\\n')}\"",
     "test": "vitest run",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"

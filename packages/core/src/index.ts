@@ -71,6 +71,12 @@ export { signWithSsh, verifySshSignature } from "./crypto/ssh.js";
 export { discoverSigningKey } from "./crypto/keyDiscovery.js";
 export type { SigningKeyInfo } from "./crypto/keyDiscovery.js";
 
+// Hooks
+export { PRE_PUSH_HOOK, POST_COMMIT_HOOK } from "./hooks/hookContent.js";
+export { installHook, isHookInstalled } from "./hooks/installHook.js";
+export { ensureProvenanceSetup } from "./hooks/ensureSetup.js";
+export type { SetupStatus } from "./hooks/ensureSetup.js";
+
 // Utilities
 export { sha256 } from "./util/hash.js";
 export { isoNow, formatDuration, formatTimestamp } from "./util/time.js";
@@ -86,5 +92,6 @@ export {
   getDiffNumstat,
   getCurrentBranch,
   getDefaultBranch,
+  getGitHooksDir,
 } from "./util/git.js";
 export type { CommitLogEntry, DiffNumstatEntry } from "./util/git.js";

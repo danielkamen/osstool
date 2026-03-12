@@ -11,16 +11,18 @@ import {
   getSessionsDir,
   getAttestationsDir,
   getConfigPath,
+  getGitHooksDir,
   isoNow,
+  PRE_PUSH_HOOK,
+  POST_COMMIT_HOOK,
+  installHook,
 } from "@contrib-provenance/core";
 import type { ProjectConfig } from "@contrib-provenance/core";
-import { PRE_PUSH_HOOK, POST_COMMIT_HOOK } from "../hooks/pre-push.js";
 import {
   writeProvenanceYml,
   writeWorkflow,
 } from "../util/scaffoldGitHub.js";
 import { addDevDependency } from "../util/packageManager.js";
-import { installHook } from "../util/installHook.js";
 
 interface InitArgs {
   signing: "gpg" | "ssh" | "auto" | "none";
@@ -170,7 +172,7 @@ export const initCommand: CommandModule<object, InitArgs> = {
 
     // Install hooks (chaining with existing hooks if present)
     if (argv.hooks) {
-      const hooksDir = join(cwd, ".git", "hooks");
+      const hooksDir = await getGitHooksDir(cwd);
       await mkdir(hooksDir, { recursive: true });
 
       await installHook(hooksDir, "pre-push", PRE_PUSH_HOOK);
