@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo-placeholder.svg" alt="Contribution Provenance" width="120" />
+  <img src="fingerprint_imresizer.jpg" alt="Contribution Provenance" width="120" />
 </p>
 
 <h1 align="center">Contribution Provenance</h1>
