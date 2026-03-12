@@ -15,6 +15,7 @@ import {
   getFileHash,
   mapChangeToEvents,
   mapOpenToEvent,
+  mapCloseToEvent,
 } from "./EditorBridge.js";
 
 export class SessionTracker implements vscode.Disposable {
@@ -24,7 +25,11 @@ export class SessionTracker implements vscode.Disposable {
   private disposables: vscode.Disposable[] = [];
   private checkpointWatcher: vscode.FileSystemWatcher | undefined;
 
-  constructor(private workspaceRoot: string) {}
+  private idleThresholdMs: number | undefined;
+
+  constructor(private workspaceRoot: string, options?: { idleThresholdMs?: number }) {
+    this.idleThresholdMs = options?.idleThresholdMs;
+  }
 
   get isTracking(): boolean {
     return this.sessionId !== undefined;
@@ -88,6 +93,14 @@ export class SessionTracker implements vscode.Disposable {
     this.eventBuffer.push(mapOpenToEvent(fileHash));
   }
 
+  onDocumentClosed(doc: vscode.TextDocument): void {
+    if (!this.sessionId) return;
+    if (!shouldTrackDocument(doc)) return;
+
+    const fileHash = getFileHash(doc.uri.fsPath, this.workspaceRoot);
+    this.eventBuffer.push(mapCloseToEvent(fileHash));
+  }
+
   recordFocusChange(focused: boolean): void {
     if (!this.sessionId) return;
     this.eventBuffer.push({
@@ -111,7 +124,9 @@ export class SessionTracker implements vscode.Disposable {
     if (!this.sessionId) return null;
     await this.flush();
     const events = await SessionStore.readEvents(this.workspaceRoot, this.sessionId);
-    return computeMetrics(events, this.sessionId);
+    return computeMetrics(events, this.sessionId, {
+      idleThresholdMs: this.idleThresholdMs,
+    });
   }
 
   async flush(): Promise<void> {

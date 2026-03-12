@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { SessionTracker } from "./SessionTracker.js";
 import { StatusBarController } from "./StatusBarController.js";
 import { TestRunWatcher } from "./TestRunWatcher.js";
-import { registerCommands } from "./CommandRegistrar.js";
+import { registerCommands, registerInitCommand } from "./CommandRegistrar.js";
 import { getWorkspaceRoot } from "./EditorBridge.js";
 import { PROVENANCE_DIR } from "@contrib-provenance/core";
 
@@ -16,10 +16,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const workspaceRoot = getWorkspaceRoot();
   if (!workspaceRoot) return;
 
+  // Always register init command so it works even without .provenance/
+  registerInitCommand(context);
+
   const configPath = join(workspaceRoot, PROVENANCE_DIR, "config.json");
   if (!existsSync(configPath)) return;
 
-  tracker = new SessionTracker(workspaceRoot);
+  // Read extension settings
+  const config = vscode.workspace.getConfiguration("provenance");
+  const idleTimeoutMinutes = config.get<number>("idleTimeoutMinutes", 5);
+
+  tracker = new SessionTracker(workspaceRoot, {
+    idleThresholdMs: idleTimeoutMinutes * 60 * 1000,
+  });
   statusBar = new StatusBarController(tracker);
   testWatcher = new TestRunWatcher(tracker);
 
@@ -42,6 +51,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
   );
 
+  // Register document close listener
+  context.subscriptions.push(
+    vscode.workspace.onDidCloseTextDocument((doc) => {
+      tracker?.onDocumentClosed(doc);
+    }),
+  );
+
   // Register focus change listener
   context.subscriptions.push(
     vscode.window.onDidChangeWindowState((state) => {
@@ -49,12 +65,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
   );
 
-  // Auto-start session — always on, no manual intervention needed
-  try {
-    await tracker.start();
-    await statusBar.updateDisplay();
-  } catch {
-    // Session may already be active from CLI, silently ignore
+  // Auto-start session if configured (default: true)
+  const autoStart = config.get<boolean>("autoStart", true);
+
+  if (autoStart) {
+    try {
+      await tracker.start();
+      await statusBar.updateDisplay();
+    } catch {
+      // Session may already be active from CLI, silently ignore
+    }
   }
 
   // Start watching for checkpoint triggers from pre-push hook

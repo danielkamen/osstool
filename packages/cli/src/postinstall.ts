@@ -1,7 +1,8 @@
 import { existsSync } from "node:fs";
-import { mkdir, writeFile, readFile, chmod } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { PRE_PUSH_HOOK, POST_COMMIT_HOOK } from "./hooks/pre-push.js";
+import { installHook } from "./util/installHook.js";
 
 function findGitRoot(startDir: string): string | null {
   let dir = startDir;
@@ -12,26 +13,6 @@ function findGitRoot(startDir: string): string | null {
     dir = parent;
   }
   return null;
-}
-
-async function installHook(
-  hooksDir: string,
-  hookName: string,
-  hookContent: string,
-): Promise<void> {
-  const hookPath = join(hooksDir, hookName);
-
-  if (existsSync(hookPath)) {
-    // Chain with existing hook — don't overwrite
-    const existing = await readFile(hookPath, "utf-8");
-    if (existing.includes("contrib-provenance")) return; // Already installed
-    // Append our hook to the existing one
-    const chained = existing.trimEnd() + "\n\n" + hookContent.replace("#!/bin/sh\n", "# contrib-provenance (chained)\n");
-    await writeFile(hookPath, chained);
-  } else {
-    await writeFile(hookPath, hookContent);
-  }
-  await chmod(hookPath, 0o755);
 }
 
 async function main(): Promise<void> {
@@ -46,7 +27,7 @@ async function main(): Promise<void> {
   if (!existsSync(provDir)) {
     await mkdir(join(provDir, "sessions"), { recursive: true });
     await mkdir(join(provDir, "attestations"), { recursive: true });
-    await writeFile(join(provDir, ".gitignore"), "sessions/\nattestations/\n");
+    await writeFile(join(provDir, ".gitignore"), "sessions/\nattestations/\ncheckpoint-*\n");
   }
 
   // Install hooks

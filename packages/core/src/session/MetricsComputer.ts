@@ -10,7 +10,7 @@ function isActivityEvent(event: SessionEvent): boolean {
   );
 }
 
-function computeDwellMs(events: SessionEvent[]): number {
+function computeDwellMs(events: SessionEvent[], idleThresholdMs: number): number {
   const sorted = [...events].sort((a, b) => a.timestamp - b.timestamp);
   let totalMs = 0;
   let lastActivityTs: number | null = null;
@@ -33,7 +33,7 @@ function computeDwellMs(events: SessionEvent[]): number {
 
     if (lastActivityTs !== null) {
       const gap = event.timestamp - lastActivityTs;
-      if (gap < IDLE_THRESHOLD_MS) {
+      if (gap < idleThresholdMs) {
         totalMs += gap;
       }
     }
@@ -47,7 +47,9 @@ function computeDwellMs(events: SessionEvent[]): number {
 export function computeMetrics(
   events: SessionEvent[],
   sessionId: string,
+  options?: { idleThresholdMs?: number },
 ): SessionMetrics {
+  const idleThreshold = options?.idleThresholdMs ?? IDLE_THRESHOLD_MS;
   const sorted = [...events].sort((a, b) => a.timestamp - b.timestamp);
 
   // Find session boundaries
@@ -62,7 +64,7 @@ export function computeMetrics(
     : new Date().toISOString();
 
   // Dwell time
-  const dwellMs = computeDwellMs(sorted);
+  const dwellMs = computeDwellMs(sorted, idleThreshold);
   const dwellMinutes = Math.round(dwellMs / 60_000);
 
   // Active files

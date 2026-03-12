@@ -1,9 +1,17 @@
 import * as vscode from "vscode";
 import type { SessionTracker } from "./SessionTracker.js";
 import type { StatusBarController } from "./StatusBarController.js";
+import { existsSync } from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import {
   SessionStore,
   computeMetrics,
+  getProvenanceDir,
+  getSessionsDir,
+  getAttestationsDir,
+  getConfigPath,
+  isoNow,
 } from "@contrib-provenance/core";
 import { getWorkspaceRoot } from "./EditorBridge.js";
 
@@ -13,6 +21,24 @@ export function registerCommands(
   statusBar: StatusBarController,
 ): void {
   context.subscriptions.push(
+    vscode.commands.registerCommand("provenance.sessionStart", async () => {
+      if (tracker.isTracking) {
+        vscode.window.showInformationMessage("Provenance session is already active.");
+        return;
+      }
+      try {
+        const sessionId = await tracker.start();
+        await statusBar.updateDisplay();
+        vscode.window.showInformationMessage(
+          `Provenance session started: ${sessionId.slice(0, 8)}...`,
+        );
+      } catch (err) {
+        vscode.window.showErrorMessage(
+          `Failed to start session: ${(err as Error).message}`,
+        );
+      }
+    }),
+
     vscode.commands.registerCommand("provenance.sessionCheckpoint", async () => {
       if (!tracker.isTracking) {
         vscode.window.showWarningMessage("No active provenance session to checkpoint.");
@@ -87,6 +113,52 @@ export function registerCommands(
       output.appendLine(`Test runs: ${metrics.test_runs_total} (${metrics.test_failures_observed} failed)`);
       output.appendLine(`Test failure ratio: ${Math.round(metrics.test_failure_ratio * 100)}%`);
       output.show();
+    }),
+
+  );
+}
+
+export function registerInitCommand(
+  context: vscode.ExtensionContext,
+): void {
+  context.subscriptions.push(
+    vscode.commands.registerCommand("provenance.init", async () => {
+      const wsRoot = getWorkspaceRoot();
+      if (!wsRoot) return;
+
+      const provDir = getProvenanceDir(wsRoot);
+      if (existsSync(join(provDir, "config.json"))) {
+        vscode.window.showInformationMessage("Provenance is already initialized in this workspace.");
+        return;
+      }
+
+      try {
+        await mkdir(getSessionsDir(wsRoot), { recursive: true });
+        await mkdir(getAttestationsDir(wsRoot), { recursive: true });
+        await writeFile(
+          join(provDir, ".gitignore"),
+          "sessions/\nattestations/\ncheckpoint-*\n",
+        );
+
+        const config = {
+          version: 1,
+          remote: "unknown",
+          initialized_at: isoNow(),
+          signing_method: "auto",
+          hooks: { pre_push: false, post_commit: false },
+          base_branch: "main",
+          init_mode: "minimal",
+        };
+        await writeFile(getConfigPath(wsRoot), JSON.stringify(config, null, 2));
+
+        vscode.window.showInformationMessage(
+          "Provenance initialized. Reload window to start tracking.",
+        );
+      } catch (err) {
+        vscode.window.showErrorMessage(
+          `Failed to initialize provenance: ${(err as Error).message}`,
+        );
+      }
     }),
   );
 }

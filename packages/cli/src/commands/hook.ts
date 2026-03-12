@@ -1,5 +1,6 @@
 import type { CommandModule } from "yargs";
 import { runPrePush } from "../hooks/prePushRunner.js";
+import { TOOL_VERSION } from "@contrib-provenance/core";
 
 const prePushCommand: CommandModule = {
   command: "pre-push",
@@ -24,11 +25,9 @@ const postCommitCommand: CommandModule = {
       const active = await SessionStore.findActiveSession(process.cwd());
       if (active) {
         await SessionStore.appendEvent(process.cwd(), active.session_id, {
-          type: "session_start", // Re-use boundary event as commit marker
+          type: "commit_marker",
           timestamp: Date.now(),
-          session_id: active.session_id,
-          tool_version: "0.1.0",
-          editor: "git-hook",
+          tool_version: TOOL_VERSION,
         });
       }
     } catch {

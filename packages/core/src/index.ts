@@ -7,6 +7,7 @@ export type {
   TestRunEvent,
   FocusChangeEvent,
   SessionBoundaryEvent,
+  CommitMarkerEvent,
   SessionMeta,
   SessionMetrics,
   SessionStatus,

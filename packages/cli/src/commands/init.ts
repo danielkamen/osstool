@@ -1,6 +1,6 @@
 import type { CommandModule } from "yargs";
 import { existsSync } from "node:fs";
-import { mkdir, writeFile, chmod } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   isGitRepo,
@@ -20,6 +20,7 @@ import {
   writeWorkflow,
 } from "../util/scaffoldGitHub.js";
 import { addDevDependency } from "../util/packageManager.js";
+import { installHook } from "../util/installHook.js";
 
 interface InitArgs {
   signing: "gpg" | "ssh" | "auto" | "none";
@@ -163,24 +164,19 @@ export const initCommand: CommandModule<object, InitArgs> = {
         post_commit: false,
       },
       base_branch: baseBranch,
+      init_mode: argv.minimal ? "minimal" : "full",
     };
     await writeFile(getConfigPath(cwd), JSON.stringify(config, null, 2));
 
-    // Install hooks
+    // Install hooks (chaining with existing hooks if present)
     if (argv.hooks) {
       const hooksDir = join(cwd, ".git", "hooks");
       await mkdir(hooksDir, { recursive: true });
 
-      // Pre-push hook
-      const prePushPath = join(hooksDir, "pre-push");
-      await writeFile(prePushPath, PRE_PUSH_HOOK);
-      await chmod(prePushPath, 0o755);
+      await installHook(hooksDir, "pre-push", PRE_PUSH_HOOK);
       config.hooks.pre_push = true;
 
-      // Post-commit hook
-      const postCommitPath = join(hooksDir, "post-commit");
-      await writeFile(postCommitPath, POST_COMMIT_HOOK);
-      await chmod(postCommitPath, 0o755);
+      await installHook(hooksDir, "post-commit", POST_COMMIT_HOOK);
       config.hooks.post_commit = true;
 
       await writeFile(getConfigPath(cwd), JSON.stringify(config, null, 2));

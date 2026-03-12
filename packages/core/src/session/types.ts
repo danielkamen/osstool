@@ -40,13 +40,20 @@ export interface SessionBoundaryEvent {
   editor?: string;
 }
 
+export interface CommitMarkerEvent {
+  type: "commit_marker";
+  timestamp: number;
+  tool_version: string;
+}
+
 export type SessionEvent =
   | FileEditEvent
   | FileOpenEvent
   | FileCloseEvent
   | TestRunEvent
   | FocusChangeEvent
-  | SessionBoundaryEvent;
+  | SessionBoundaryEvent
+  | CommitMarkerEvent;
 
 export type SessionStatus = "active" | "ended" | "exported";
 

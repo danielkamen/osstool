@@ -10,6 +10,7 @@ export const ProjectConfigSchema = z.object({
     post_commit: z.boolean().default(false),
   }),
   base_branch: z.string().default("main"),
+  init_mode: z.enum(["full", "minimal", "server-only"]).optional(),
 });
 
 export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;

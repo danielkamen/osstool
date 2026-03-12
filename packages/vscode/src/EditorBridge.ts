@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "node:path";
-import type { FileEditEvent, FileOpenEvent } from "@contrib-provenance/core";
+import type { FileEditEvent, FileOpenEvent, FileCloseEvent } from "@contrib-provenance/core";
 import { sha256 } from "@contrib-provenance/core";
 
 export function getWorkspaceRoot(): string | undefined {
@@ -46,6 +46,14 @@ export function mapChangeToEvents(
 export function mapOpenToEvent(fileHash: string): FileOpenEvent {
   return {
     type: "file_open",
+    timestamp: Date.now(),
+    file_hash: fileHash,
+  };
+}
+
+export function mapCloseToEvent(fileHash: string): FileCloseEvent {
+  return {
+    type: "file_close",
     timestamp: Date.now(),
     file_hash: fileHash,
   };
