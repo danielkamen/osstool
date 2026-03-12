@@ -5,3 +5,7 @@ tsconfig.json
 .turbo/**
 **/*.ts
 !dist/**/*.js
+**/.git/**
+**/packages/**
+**/turbo.json
+../**

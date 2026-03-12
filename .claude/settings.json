@@ -52,7 +52,13 @@
       "Bash(npm ci:*)",
       "Bash(grep -r \"postinstall\\\\|preinstall\\\\|husky\" /home/dan/osstool/package*.json)",
       "Bash(find /home/dan/osstool -path */test* -name *init* -o -path */test* -name *setup*)",
-      "Bash(grep -r \"CONTRIBUTING\" /home/dan/osstool --maxdepth 1)"
+      "Bash(grep -r \"CONTRIBUTING\" /home/dan/osstool --maxdepth 1)",
+      "Bash(chmod +x /home/dan/osstool/scripts/setup.sh)",
+      "Bash(grep -E \"\\\\.ts$|\\\\.json$\")",
+      "Bash(grep -r \"dimensions\\\\|variants\\\\|targets\" /home/dan/osstool --include=*.ts --include=*.json --include=*.js)",
+      "Bash(ls /home/dan/osstool/package.json /home/dan/osstool/packages/*/package.json)",
+      "Bash(npx vsce:*)",
+      "Bash(code --install-extension /home/dan/osstool/packages/vscode/contrib-provenance-vscode-0.1.0.vsix)"
     ],
     "additionalDirectories": [
       "/tmp",

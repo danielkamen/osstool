@@ -5,14 +5,14 @@
 <h1 align="center">Contribution Provenance</h1>
 
 <p align="center">
-  <strong>Help OSS maintainers cut through low-effort PR spam. Signed proof that a human actually wrote the code.</strong>
+  <strong>Optional signed provenance for pull requests: show that code was iterated on and exercised, without recording raw keystrokes.</strong>
 </p>
 
 <p align="center">
-  <a href="#quickstart">Quickstart</a> &bull;
-  <a href="#how-it-works">How It Works</a> &bull;
-  <a href="#packages">Packages</a> &bull;
-  <a href="#configuration">Configuration</a> &bull;
+  <a href="#why-this-exists">Why This Exists</a> &bull;
+  <a href="#who-should-try-this-first">Who It's For</a> &bull;
+  <a href="#2-minute-local-demo">2-Minute Demo</a> &bull;
+  <a href="#what-this-does-not-claim">What It Doesn't Claim</a> &bull;
   <a href="#privacy">Privacy</a> &bull;
   <a href="#contributing">Contributing</a>
 </p>
@@ -24,17 +24,56 @@
 
 ---
 
+## Why This Exists
+
 Open-source maintainers are drowning in AI-generated drive-by PRs — mass-produced patches from agents that never ran the tests, never read the surrounding code, and never iterated on the change. Reviewing these wastes hours and burns out maintainers.
 
-This project was written with AI assitance, but that doesn't matter, this isn't a 1k+ stared open source project.
+There is no good way to tell the difference. Pure AI detectors are unreliable, invasive, and accusatory. Manual review doesn't scale.
 
-Contribution Provenance gives contributors a way to **prove they actually did the work**. It tracks editing time, revisions, test runs, and paste patterns locally, then packages them into a signed snapshot attached to the PR. Maintainers can prioritize PRs that show real engagement and let the fire-and-forget ones wait.
+Contribution Provenance takes a different approach: instead of guessing _who_ wrote code, it records _how_ it was worked on. Aggregate signals — editing time, revision passes, test runs — are packaged into a signed snapshot that the contributor attaches to their PR. A GitHub Action reads the snapshot and labels the PR with a confidence level.
 
-**Always optional.** No attestation? No problem — the PR goes through normal review. Attested PRs just get fast-tracked.
+**Attested PRs can be fast-tracked. Unattested PRs follow the standard review queue. Missing attestation is not an accusation — it just means no extra signal is available.**
 
-## Quickstart
+## Who Should Try This First
 
-### For maintainers (one command)
+This is not for "all developers." It is for:
+
+- **Maintainers of medium/large OSS repos** getting noisy, low-effort PRs
+- **Security and DevEx teams** thinking about AI-generated contribution quality
+- **Developers who care about trust and reputation** in code review
+
+If you maintain a repo that has dealt with low-signal PR volume, or if you're thinking about AI contribution policies for your project, this tool was built for you.
+
+## What This Does Not Claim
+
+Be clear about what this is and is not:
+
+- **It is optional.** Contributors are never required to use it.
+- **Missing attestation is not an accusation.** It simply means no provenance data was provided.
+- **It is a review signal, not a truth machine.** It helps prioritize, not gatekeep.
+- **It tracks aggregate metrics only.** Never raw keystrokes, file contents, or clipboard data.
+- **It does not prove authorship.** A determined actor could spoof signals. That's why this is a soft signal for prioritization, never a gate.
+
+## 2-Minute Local Demo
+
+### Maintainers: add the GitHub Action to your repo
+
+The fastest way to try this is the GitHub Action. It scores PRs using server-side metrics (commit patterns, file diffs, temporal analysis) — no client-side tooling required for contributors at all.
+
+```bash
+# Any language — no Node.js required in your project
+curl -fsSL https://raw.githubusercontent.com/danielkamen/osstool/main/scripts/setup.sh | sh
+```
+
+Or if you have Node installed locally:
+
+```bash
+npx @contrib-provenance/cli init --server-only
+```
+
+Both generate the GitHub Action config and workflow. Commit, push, and your PRs start getting labeled.
+
+### Full setup (npm projects)
 
 ```bash
 # Install the CLI and set up everything in one shot
@@ -53,28 +92,12 @@ Commit the generated files and push. You're done.
 
 Use `provenance init --minimal` if you only want the `.provenance/` directory and hooks without the GitHub Action setup.
 
-### For non-npm repos (Rust, Python, Go, etc.)
-
-No Node.js required in your project. One shell command sets up server-side PR scoring:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/danielkamen/osstool/main/scripts/setup.sh | sh
-```
-
-Or if you have Node installed locally (without adding it to your project):
-
-```bash
-npx @contrib-provenance/cli init --server-only
-```
-
-Both generate the GitHub Action config and workflow. The Action scores PRs using **server-side metrics only** (commit patterns, file diffs, temporal analysis) — no client-side tooling required for contributors at all.
-
 ### For contributors (zero setup)
 
 **npm projects:** Contributors don't need to install anything or learn any commands. When they clone your repo and run `npm install`, everything is automatic:
 
 1. **Clone & install** — `npm install` installs the CLI as a devDependency, which auto-configures git hooks
-2. **Code normally** — the VS Code extension (if installed) tracks editing time, test runs, and iteration patterns silently
+2. **Code normally** — the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=caiman.contrib-provenance-vscode) (if installed) tracks editing time, test runs, and iteration patterns silently
 3. **Push** — the pre-push hook automatically builds and signs a provenance attestation
 4. **Open a PR** — the GitHub Action reads the attestation and labels the PR with a confidence level
 
@@ -121,6 +144,16 @@ These combine into an **activity level** on the PR:
 | **Low** | Snapshot present but minimal hands-on activity detected |
 | **None** | No snapshot provided — normal review queue, no judgment |
 
+## How This Compares
+
+|  | Raw AI detector | Contribution Provenance | Manual review alone |
+|---|---|---|---|
+| **Certainty** | Low — high false-positive rate | Moderate — measures engagement, not authorship | Varies by reviewer |
+| **Privacy** | Often requires code/keystroke access | Aggregate metrics only, no raw content | N/A |
+| **Spoof resistance** | Arms race with generators | Signatures + multiple signals raise the bar | Relies on reviewer intuition |
+| **Maintainer friction** | Integrate + triage false positives | One-time GitHub Action setup | Status quo |
+| **Developer friction** | Often involuntary | Optional, zero-setup for contributors | None |
+
 ## Packages
 
 This is a monorepo managed with [Turbo](https://turbo.build). Each package has a focused responsibility:
@@ -129,7 +162,7 @@ This is a monorepo managed with [Turbo](https://turbo.build). Each package has a
 |---|---|
 | [`packages/core`](packages/core) | Session types, metrics, schema (Zod), signing & verification, storage |
 | [`packages/cli`](packages/cli) | `provenance` CLI — `init`, `session start/end`, `inspect`, `export`, `attach` |
-| [`packages/vscode`](packages/vscode) | VS Code extension — auto-tracks edits, focus, test runs; status bar |
+| [`packages/vscode`](packages/vscode) | [VS Code extension](https://marketplace.visualstudio.com/items?itemName=caiman.contrib-provenance-vscode) — auto-tracks edits, focus, test runs; status bar |
 | [`packages/action`](packages/action) | GitHub Action — checks PRs for snapshots, labels them, posts summary comments |
 
 ## Snapshot Format
@@ -269,9 +302,18 @@ The monorepo uses [Turbo](https://turbo.build) for task orchestration. Package d
 | **v1.0** | OSS fast-lane mode for open-source maintainers |
 | **v1.5** | Education dashboard & GitHub Classroom integration |
 
-## Contributing
+## Get Involved
 
-Contributions are welcome! Please open an issue or pull request.
+We're looking for feedback, not adoption (yet). The most useful things you can do:
+
+- **Try the GitHub Action on a test repo** and tell us where setup breaks
+- **Roast the README or threat model** — open an issue with what doesn't hold up
+- **Tell us if this fits your review flow** — or what would stop you from enabling it
+- **Run the VS Code extension for one coding session** and share your experience
+
+If you maintain a repo dealing with low-signal PR volume, we'd especially value your perspective on whether this is useful or dead-on-arrival for your workflow.
+
+Contributions are also welcome — please open an issue or pull request.
 
 ## License
 
