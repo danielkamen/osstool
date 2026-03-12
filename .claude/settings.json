@@ -61,7 +61,8 @@
       "Bash(code --install-extension /home/dan/osstool/packages/vscode/contrib-provenance-vscode-0.1.0.vsix)",
       "Bash(node -e \"require\\(''/home/dan/osstool/packages/cli/dist/postinstall.js''\\)\")",
       "Bash(chmod +x /home/dan/osstool/scripts/release-tag.sh /home/dan/osstool/scripts/release-vscode.sh /home/dan/osstool/scripts/release-npm.sh)",
-      "Bash(chmod +x /home/dan/osstool/scripts/release.sh)"
+      "Bash(chmod +x /home/dan/osstool/scripts/release.sh)",
+      "Bash(ls package.json packages/*/package.json)"
     ],
     "additionalDirectories": [
       "/tmp",

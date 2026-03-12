@@ -3,11 +3,15 @@ import { runPrePush } from "../hooks/prePushRunner.js";
 import { TOOL_VERSION } from "@contrib-provenance/core";
 
 const prePushCommand: CommandModule = {
-  command: "pre-push",
+  command: "pre-push [remote] [url]",
   describe: false, // Hidden
-  handler: async () => {
+  builder: (yargs) =>
+    yargs
+      .positional("remote", { type: "string", default: "origin" })
+      .positional("url", { type: "string" }),
+  handler: async (argv) => {
     try {
-      await runPrePush(process.cwd());
+      await runPrePush(process.cwd(), argv.remote as string);
     } catch {
       // Never block push — swallow all errors
     }

@@ -85,7 +85,7 @@ function mergeMetrics(
   };
 }
 
-export async function runPrePush(repoRoot: string): Promise<void> {
+export async function runPrePush(repoRoot: string, remote = "origin"): Promise<void> {
   // Guard against recursion: pushing notes from within pre-push would re-trigger this hook
   if (process.env.PROVENANCE_PUSHING_NOTES) return;
 
@@ -159,7 +159,7 @@ export async function runPrePush(repoRoot: string): Promise<void> {
     try {
       await execFile(
         "git",
-        ["push", "origin", "refs/notes/provenance"],
+        ["push", remote, "refs/notes/provenance"],
         {
           cwd: repoRoot,
           timeout: 10_000,

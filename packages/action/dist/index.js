@@ -31071,14 +31071,12 @@ var PRE_PUSH_HOOK = `#!/bin/sh
 # Computes provenance metrics and attaches them to the push.
 # This hook NEVER blocks push.
 
-REMOTE="$1"
+LOGFILE=".provenance/hook.log"
 
 if command -v npx >/dev/null 2>&1; then
-  npx --yes @contrib-provenance/cli hook pre-push "$@" 2>/dev/null || true
+  echo "--- pre-push $(date) ---" >> "$LOGFILE" 2>/dev/null
+  npx --yes @contrib-provenance/cli hook pre-push "$@" 2>>"$LOGFILE" || true
 fi
-
-# Push provenance notes to remote (non-blocking)
-git push "$REMOTE" refs/notes/provenance:refs/notes/provenance --no-verify --force 2>/dev/null || true
 
 exit 0
 `;
@@ -31125,10 +31123,7 @@ function isHookInstalled(hooksDir, hookName) {
 // src/hooks/ensureSetup.ts
 var import_node_fs6 = __nccwpck_require__(9896);
 var import_promises6 = __nccwpck_require__(1943);
-var import_node_child_process4 = __nccwpck_require__(5317);
-var import_node_util4 = __nccwpck_require__(9023);
 var import_node_path7 = __nccwpck_require__(6928);
-var execFile3 = (0, import_node_util4.promisify)(import_node_child_process4.execFile);
 async function ensureProvenanceSetup(repoRoot) {
   const configPath = getConfigPath(repoRoot);
   if (!(0, import_node_fs6.existsSync)(configPath)) {
@@ -31148,7 +31143,7 @@ async function ensureProvenanceSetup(repoRoot) {
   const provDir = getProvenanceDir(repoRoot);
   const gitignorePath = (0, import_node_path7.join)(provDir, ".gitignore");
   if (!(0, import_node_fs6.existsSync)(gitignorePath)) {
-    await (0, import_promises6.writeFile)(gitignorePath, "sessions/\nattestations/\ncheckpoint-*\n");
+    await (0, import_promises6.writeFile)(gitignorePath, "sessions/\nattestations/\ncheckpoint-*\nhook.log\n");
   }
   let hooksInstalled = false;
   const hooksDir = await getGitHooksDir(repoRoot);
@@ -31160,29 +31155,6 @@ async function ensureProvenanceSetup(repoRoot) {
   if (!isHookInstalled(hooksDir, "post-commit")) {
     await installHook(hooksDir, "post-commit", POST_COMMIT_HOOK);
     hooksInstalled = true;
-  }
-  try {
-    const { stdout } = await execFile3(
-      "git",
-      ["config", "--get-all", "remote.origin.push"],
-      { cwd: repoRoot, timeout: 3e3 }
-    );
-    if (!stdout.includes("refs/notes/provenance")) {
-      await execFile3(
-        "git",
-        ["config", "--add", "remote.origin.push", "refs/notes/provenance"],
-        { cwd: repoRoot, timeout: 3e3 }
-      );
-    }
-  } catch {
-    try {
-      await execFile3(
-        "git",
-        ["config", "--add", "remote.origin.push", "refs/notes/provenance"],
-        { cwd: repoRoot, timeout: 3e3 }
-      );
-    } catch {
-    }
   }
   return { configFound: true, directoriesCreated, hooksInstalled };
 }
