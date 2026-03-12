@@ -41,7 +41,13 @@
       "Bash(grep -r \"refactor\\\\|entropy\\\\|Refactor\\\\|Entropy\" /home/dan/osstool --include=*.ts --include=*.tsx --include=*.md --include=*.json)",
       "Bash(find /home/dan/osstool -type f \\\\\\(-name *.md -o -name *.txt -o -name TODO* -o -name PLAN* \\\\\\))",
       "Bash(find /home/dan/osstool/packages -name *.test.ts -o -name *.spec.ts)",
-      "Bash(npx esbuild:*)"
+      "Bash(npx esbuild:*)",
+      "Bash(gh run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(wc -l /home/dan/osstool/packages/core/src/**/*.ts /home/dan/osstool/packages/cli/src/**/*.ts /home/dan/osstool/packages/action/src/**/*.ts /home/dan/osstool/packages/vscode/src/*.ts)",
+      "Bash(npm test:*)",
+      "Bash(git push:*)"
     ],
     "additionalDirectories": [
       "/tmp",
