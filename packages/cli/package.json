@@ -6,6 +6,9 @@
     "provenance": "dist/index.js"
   },
   "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "postinstall": "node -e \"try{require('./dist/postinstall.js')}catch(e){process.stderr.write('contrib-provenance: '+((e&&e.message)||'setup skipped')+'\\n')}\"",
