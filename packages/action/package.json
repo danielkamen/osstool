@@ -1,0 +1,26 @@
+{
+  "name": "@contrib-provenance/action",
+  "version": "0.3.0",
+  "private": true,
+  "description": "GitHub Action for Contribution Provenance verification",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "ncc build src/index.ts -o dist --source-map --license licenses.txt",
+    "test": "vitest run",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@actions/core": "^1.10.0",
+    "@actions/github": "^6.0.0",
+    "@contrib-provenance/core": "*",
+    "yaml": "^2.4.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@vercel/ncc": "^0.38.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}

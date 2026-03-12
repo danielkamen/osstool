@@ -1,0 +1,52 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/dan/.claude/projects/**)",
+      "Bash(command -v python3)",
+      "Bash(python3 -c \"from docx import Document; doc = Document\\(''''/home/dan/osstool/contribution-provenance-v2.docx''''\\); print\\(''''\\\\n''''.join\\([p.text for p in doc.paragraphs]\\)\\)\")",
+      "Bash(command -v unzip)",
+      "Bash(unzip -p /home/dan/osstool/contribution-provenance-v2.docx word/document.xml)",
+      "Read(//home/dan/**)",
+      "Bash(python3:*)",
+      "Bash(find /home/dan/.claude -name *.md -type f)",
+      "Bash(command -v node)",
+      "Bash(command -v npm)",
+      "Bash(npm --version)",
+      "Read(//tmp/**)",
+      "Bash(npm install:*)",
+      "Bash(npx turbo:*)",
+      "Bash(npx tsup:*)",
+      "Bash(npx ncc:*)",
+      "Bash(node /home/dan/osstool/packages/cli/dist/index.js init --no-hooks)",
+      "Bash(node /home/dan/osstool/packages/cli/dist/index.js session start --editor cli)",
+      "Bash(node /home/dan/osstool/packages/cli/dist/index.js session end)",
+      "Bash(node /home/dan/osstool/packages/cli/dist/index.js inspect)",
+      "Bash(node /home/dan/osstool/packages/cli/dist/index.js export --no-sign)",
+      "Bash(git remote:*)",
+      "Bash(node /home/dan/osstool/packages/cli/dist/index.js attach --dry-run 42)",
+      "Bash(npm link:*)",
+      "Bash(provenance --help)",
+      "Bash(cat /home/dan/osstool/docs/guides/*)",
+      "Bash(npm run:*)",
+      "Bash(find /home/dan/osstool/docs -type f -name *.md -o -name *.json)",
+      "Bash(npx @vscode/vsce package --allow-missing-repository)",
+      "Bash(npx @vscode/vsce package --allow-missing-repository --no-dependencies)",
+      "Bash(node /home/dan/osstool/packages/cli/dist/index.js --help)",
+      "Bash(ls ~/.ssh/*.pub)",
+      "Bash(gh api:*)",
+      "Bash(node /home/dan/osstool/packages/cli/dist/index.js attach 4 --dry-run)",
+      "Bash(npx tsc:*)",
+      "Bash(ssh-keygen -t ed25519 -C \"dsk3110@yahoo.com\" -f ~/.ssh/id_ed25519 -N \"\")",
+      "Bash(git config:*)",
+      "Bash(grep -r \"refactor\\\\|entropy\\\\|Refactor\\\\|Entropy\" /home/dan/osstool --include=*.ts --include=*.tsx --include=*.md --include=*.json)",
+      "Bash(find /home/dan/osstool -type f \\\\\\(-name *.md -o -name *.txt -o -name TODO* -o -name PLAN* \\\\\\))",
+      "Bash(find /home/dan/osstool/packages -name *.test.ts -o -name *.spec.ts)"
+    ],
+    "additionalDirectories": [
+      "/tmp",
+      "/home/dan/.claude/plans",
+      "/home/dan/osstool/packages/vscode",
+      "/home/dan/osstool"
+    ]
+  }
+}

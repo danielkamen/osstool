@@ -1,0 +1,74 @@
+{
+  "name": "contrib-provenance-vscode",
+  "displayName": "Contribution Provenance",
+  "description": "Track your development process for transparent, signed PR attestations",
+  "version": "0.1.0",
+  "publisher": "contrib-provenance",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "workspaceContains:.provenance/config.json"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "provenance.sessionStart",
+        "title": "Provenance: Start Session"
+      },
+      {
+        "command": "provenance.sessionEnd",
+        "title": "Provenance: End Session"
+      },
+      {
+        "command": "provenance.sessionCheckpoint",
+        "title": "Provenance: Checkpoint Session (capture & continue)"
+      },
+      {
+        "command": "provenance.sessionStatus",
+        "title": "Provenance: Show Session Status"
+      },
+      {
+        "command": "provenance.inspect",
+        "title": "Provenance: Inspect Current Session"
+      },
+      {
+        "command": "provenance.export",
+        "title": "Provenance: Export Attestation"
+      }
+    ],
+    "configuration": {
+      "title": "Contribution Provenance",
+      "properties": {
+        "provenance.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically start a session when opening a provenance-enabled repo"
+        },
+        "provenance.idleTimeoutMinutes": {
+          "type": "number",
+          "default": 5,
+          "description": "Minutes of inactivity before dwell timer pauses"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "test": "echo \"No tests yet\"",
+    "package": "vsce package --allow-missing-repository --no-dependencies",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@contrib-provenance/core": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.4.0"
+  }
+}

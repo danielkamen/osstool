@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://contrib-provenance.dev/schemas/attestation/v1",
+  "title": "Contribution Provenance Attestation v1",
+  "type": "object",
+  "required": ["schema", "repo", "commit", "identity", "session", "tool_version", "timestamp", "signature", "signature_format"],
+  "properties": {
+    "schema": { "const": "contribution-provenance/v1" },
+    "repo": { "type": "string", "pattern": "^[a-zA-Z0-9.-]+/[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$" },
+    "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "identity": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "session": {
+      "type": "object",
+      "required": ["session_id", "started_at", "ended_at", "dwell_minutes", "active_files", "iteration_cycles", "post_insert_edit_ratio", "test_runs_observed", "largest_paste_lines", "paste_burst_count", "editors_used", "partial_session"],
+      "properties": {
+        "session_id": { "type": "string", "format": "uuid" },
+        "started_at": { "type": "string", "format": "date-time" },
+        "ended_at": { "type": "string", "format": "date-time" },
+        "dwell_minutes": { "type": "number", "minimum": 0 },
+        "active_files": { "type": "integer", "minimum": 0 },
+        "iteration_cycles": { "type": "integer", "minimum": 0 },
+        "post_insert_edit_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "test_runs_observed": { "type": "integer", "minimum": 0 },
+        "largest_paste_lines": { "type": "integer", "minimum": 0 },
+        "paste_burst_count": { "type": "integer", "minimum": 0 },
+        "editors_used": { "type": "array", "items": { "type": "string" } },
+        "partial_session": { "type": "boolean" }
+      }
+    },
+    "disclosure": { "type": ["string", "null"] },
+    "tool_version": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "signature": { "type": "string" },
+    "signature_format": { "enum": ["gpg", "ssh"] }
+  }
+}

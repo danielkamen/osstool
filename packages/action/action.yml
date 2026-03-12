@@ -1,0 +1,22 @@
+name: 'Contribution Provenance'
+description: 'Verify contribution provenance attestations on pull requests'
+author: 'contrib-provenance'
+branding:
+  icon: 'shield'
+  color: 'green'
+
+inputs:
+  github-token:
+    description: 'GitHub token for API access'
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  confidence:
+    description: 'Confidence level (high, medium, low, none)'
+  verified:
+    description: 'Whether the attestation passed all verification checks'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
