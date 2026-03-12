@@ -40,7 +40,8 @@
       "Bash(git config:*)",
       "Bash(grep -r \"refactor\\\\|entropy\\\\|Refactor\\\\|Entropy\" /home/dan/osstool --include=*.ts --include=*.tsx --include=*.md --include=*.json)",
       "Bash(find /home/dan/osstool -type f \\\\\\(-name *.md -o -name *.txt -o -name TODO* -o -name PLAN* \\\\\\))",
-      "Bash(find /home/dan/osstool/packages -name *.test.ts -o -name *.spec.ts)"
+      "Bash(find /home/dan/osstool/packages -name *.test.ts -o -name *.spec.ts)",
+      "Bash(npx esbuild:*)"
     ],
     "additionalDirectories": [
       "/tmp",

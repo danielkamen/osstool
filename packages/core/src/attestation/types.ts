@@ -11,11 +11,12 @@ export interface AttestationV1 {
     ended_at: string;
     dwell_minutes: number;
     active_files: number;
-    iteration_cycles: number;
-    post_insert_edit_ratio: number;
-    test_runs_observed: number;
-    largest_paste_lines: number;
-    paste_burst_count: number;
+    entropy_score: number;
+    edit_displacement_sum: number;
+    temporal_jitter_ms: number;
+    test_runs_total: number;
+    test_failures_observed: number;
+    test_failure_ratio: number;
     editors_used: string[];
     partial_session: boolean;
   };

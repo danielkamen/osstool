@@ -11,18 +11,19 @@
     "identity": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "session": {
       "type": "object",
-      "required": ["session_id", "started_at", "ended_at", "dwell_minutes", "active_files", "iteration_cycles", "post_insert_edit_ratio", "test_runs_observed", "largest_paste_lines", "paste_burst_count", "editors_used", "partial_session"],
+      "required": ["session_id", "started_at", "ended_at", "dwell_minutes", "active_files", "entropy_score", "edit_displacement_sum", "temporal_jitter_ms", "test_runs_total", "test_failures_observed", "test_failure_ratio", "editors_used", "partial_session"],
       "properties": {
         "session_id": { "type": "string", "format": "uuid" },
         "started_at": { "type": "string", "format": "date-time" },
         "ended_at": { "type": "string", "format": "date-time" },
         "dwell_minutes": { "type": "number", "minimum": 0 },
         "active_files": { "type": "integer", "minimum": 0 },
-        "iteration_cycles": { "type": "integer", "minimum": 0 },
-        "post_insert_edit_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
-        "test_runs_observed": { "type": "integer", "minimum": 0 },
-        "largest_paste_lines": { "type": "integer", "minimum": 0 },
-        "paste_burst_count": { "type": "integer", "minimum": 0 },
+        "entropy_score": { "type": "number", "minimum": 0 },
+        "edit_displacement_sum": { "type": "number", "minimum": 0 },
+        "temporal_jitter_ms": { "type": "number", "minimum": 0 },
+        "test_runs_total": { "type": "integer", "minimum": 0 },
+        "test_failures_observed": { "type": "integer", "minimum": 0 },
+        "test_failure_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
         "editors_used": { "type": "array", "items": { "type": "string" } },
         "partial_session": { "type": "boolean" }
       }

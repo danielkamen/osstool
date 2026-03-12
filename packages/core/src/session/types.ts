@@ -2,9 +2,9 @@ export interface FileEditEvent {
   type: "file_edit";
   timestamp: number;
   file_hash: string;
+  line: number;
   lines_inserted: number;
   lines_deleted: number;
-  is_post_insert_edit: boolean;
 }
 
 export interface FileOpenEvent {
@@ -19,17 +19,11 @@ export interface FileCloseEvent {
   file_hash: string;
 }
 
-export interface PasteBurstEvent {
-  type: "paste_burst";
-  timestamp: number;
-  file_hash: string;
-  line_count: number;
-}
-
 export interface TestRunEvent {
   type: "test_run";
   timestamp: number;
   command_type: "test" | "lint" | "build" | "typecheck";
+  passed: boolean | null;
 }
 
 export interface FocusChangeEvent {
@@ -50,7 +44,6 @@ export type SessionEvent =
   | FileEditEvent
   | FileOpenEvent
   | FileCloseEvent
-  | PasteBurstEvent
   | TestRunEvent
   | FocusChangeEvent
   | SessionBoundaryEvent;
@@ -82,11 +75,12 @@ export interface SessionMetrics {
   ended_at: string;
   dwell_minutes: number;
   active_files: number;
-  iteration_cycles: number;
-  post_insert_edit_ratio: number;
-  test_runs_observed: number;
-  largest_paste_lines: number;
-  paste_burst_count: number;
+  entropy_score: number;
+  edit_displacement_sum: number;
+  temporal_jitter_ms: number;
+  test_runs_total: number;
+  test_failures_observed: number;
+  test_failure_ratio: number;
   editors_used: string[];
   partial_session: boolean;
 }

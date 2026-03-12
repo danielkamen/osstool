@@ -4,7 +4,6 @@ export type {
   FileEditEvent,
   FileOpenEvent,
   FileCloseEvent,
-  PasteBurstEvent,
   TestRunEvent,
   FocusChangeEvent,
   SessionBoundaryEvent,
@@ -24,9 +23,8 @@ export type {
 
 // Session algorithms
 export { computeMetrics } from "./session/MetricsComputer.js";
-export { detectIterationCycles } from "./session/IterationDetector.js";
-export { EventAccumulator } from "./session/EventAccumulator.js";
-export { isPasteBurst } from "./session/PasteDetector.js";
+export { computeEntropy } from "./session/EntropyCalculator.js";
+export type { EntropyComponents } from "./session/EntropyCalculator.js";
 
 // Session management
 export * as SessionManager from "./session/SessionManager.js";

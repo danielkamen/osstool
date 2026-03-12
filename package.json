@@ -1,6 +1,7 @@
 {
   "name": "contribution-provenance",
   "private": true,
+  "license": "MIT",
   "packageManager": "npm@11.6.2",
   "workspaces": [
     "packages/*"

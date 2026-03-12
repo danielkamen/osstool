@@ -29,11 +29,12 @@ export function formatInspect(
   lines.push(line("", w));
   lines.push(line(`Active editing time:      ${metrics.dwell_minutes} minutes`, w));
   lines.push(line(`Files edited:             ${metrics.active_files}`, w));
-  lines.push(line(`Iteration cycles:         ${metrics.iteration_cycles}`, w));
-  lines.push(line(`Post-insert edit ratio:   ${Math.round(metrics.post_insert_edit_ratio * 100)}%`, w));
-  lines.push(line(`Test runs observed:       ${metrics.test_runs_observed}`, w));
-  lines.push(line(`Largest paste burst:      ${metrics.largest_paste_lines} lines`, w));
-  lines.push(line(`Total paste events:       ${metrics.paste_burst_count}`, w));
+  lines.push(line(`Entropy score:            ${metrics.entropy_score}`, w));
+  lines.push(line(`Edit displacement:        ${metrics.edit_displacement_sum}`, w));
+  lines.push(line(`Temporal jitter:          ${metrics.temporal_jitter_ms} ms`, w));
+  lines.push(line(`Test runs:                ${metrics.test_runs_total}`, w));
+  lines.push(line(`Test failures:            ${metrics.test_failures_observed}`, w));
+  lines.push(line(`Test failure ratio:       ${Math.round(metrics.test_failure_ratio * 100)}%`, w));
   lines.push(separator(w));
   lines.push(line("EVENT TIMELINE (never uploaded)", w));
   lines.push(line("", w));
@@ -67,14 +68,12 @@ function formatEvent(event: SessionEvent): string | null {
       return "Session ended";
     case "file_open":
       return `Opened file [hash:${event.file_hash.slice(0, 8)}...]`;
-    case "file_edit": {
-      const marker = event.is_post_insert_edit ? " (*)" : "";
-      return `Edited file [hash:${event.file_hash.slice(0, 8)}...] +${event.lines_inserted} -${event.lines_deleted}${marker}`;
+    case "file_edit":
+      return `Edited file [hash:${event.file_hash.slice(0, 8)}...] L${event.line} +${event.lines_inserted} -${event.lines_deleted}`;
+    case "test_run": {
+      const status = event.passed === true ? "passed" : event.passed === false ? "failed" : "unknown";
+      return `Test run (${event.command_type}) — ${status}`;
     }
-    case "paste_burst":
-      return `Pasted ${event.line_count} lines in [hash:${event.file_hash.slice(0, 8)}...]`;
-    case "test_run":
-      return `Test run detected (${event.command_type})`;
     case "focus_change":
       return event.editor_active ? "Editor gained focus" : "Editor lost focus";
     default:

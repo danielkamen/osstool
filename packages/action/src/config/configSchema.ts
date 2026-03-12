@@ -19,9 +19,8 @@ export const ProvenanceYmlSchema = z.object({
   signals: z
     .object({
       min_dwell_minutes: z.number().default(10),
+      min_entropy_score: z.number().default(5.0),
       require_test_run: z.boolean().default(false),
-      min_iteration_cycles: z.number().default(2),
-      min_post_insert_ratio: z.number().default(0.25),
       ai_disclosure_prompt: z.boolean().default(true),
     })
     .default({}),

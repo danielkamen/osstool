@@ -14,10 +14,10 @@ export function formatExport(attestation: AttestationV1): string {
   lines.push("Session Metrics:");
   lines.push(`  Active editing time:    ${attestation.session.dwell_minutes} min`);
   lines.push(`  Files edited:           ${attestation.session.active_files}`);
-  lines.push(`  Iteration cycles:       ${attestation.session.iteration_cycles}`);
-  lines.push(`  Post-insert edit ratio: ${Math.round(attestation.session.post_insert_edit_ratio * 100)}%`);
-  lines.push(`  Test runs:              ${attestation.session.test_runs_observed}`);
-  lines.push(`  Largest paste burst:    ${attestation.session.largest_paste_lines} lines`);
+  lines.push(`  Entropy score:          ${attestation.session.entropy_score}`);
+  lines.push(`  Edit displacement:      ${attestation.session.edit_displacement_sum}`);
+  lines.push(`  Temporal jitter:        ${attestation.session.temporal_jitter_ms} ms`);
+  lines.push(`  Test runs:              ${attestation.session.test_runs_total} (${attestation.session.test_failures_observed} failed)`);
   lines.push(`  Editors used:           ${attestation.session.editors_used.join(", ") || "unknown"}`);
   lines.push("");
 

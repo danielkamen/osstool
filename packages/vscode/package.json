@@ -3,7 +3,29 @@
   "displayName": "Contribution Provenance",
   "description": "Track your development process for transparent, signed PR attestations",
   "version": "0.1.0",
-  "publisher": "contrib-provenance",
+  "publisher": "caiman",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danielkamen/osstool.git",
+    "directory": "packages/vscode"
+  },
+  "homepage": "https://github.com/danielkamen/osstool#readme",
+  "bugs": {
+    "url": "https://github.com/danielkamen/osstool/issues"
+  },
+  "keywords": [
+    "provenance",
+    "attestation",
+    "code-review",
+    "contribution",
+    "signing",
+    "pull-request",
+    "developer-tools",
+    "metrics",
+    "open-source",
+    "transparency"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },

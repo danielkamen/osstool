@@ -5,9 +5,8 @@ export type ConfidenceLevel = "high" | "medium" | "low";
 interface ConfidenceInput {
   metrics: {
     dwell_minutes: number;
-    iteration_cycles: number;
-    post_insert_edit_ratio: number;
-    test_runs_observed: number;
+    entropy_score: number;
+    test_runs_total: number;
   };
   config: ProvenanceYmlConfig;
   verificationPassed: boolean;
@@ -20,19 +19,18 @@ export function computeConfidence(input: ConfidenceInput): ConfidenceLevel {
   // Must pass verification to be anything above "low"
   if (!input.verificationPassed) return "low";
 
-  // HIGH: all four criteria met
+  // HIGH: strong entropy + engaged session + at least one test run
   const isHigh =
+    metrics.entropy_score >= s.min_entropy_score &&
     metrics.dwell_minutes >= s.min_dwell_minutes &&
-    metrics.iteration_cycles >= s.min_iteration_cycles &&
-    metrics.post_insert_edit_ratio >= s.min_post_insert_ratio &&
-    metrics.test_runs_observed >= 1;
+    metrics.test_runs_total >= 1;
 
   if (isHigh) return "high";
 
-  // MEDIUM: partial criteria
+  // MEDIUM: moderate entropy + decent dwell
   const isMedium =
-    metrics.dwell_minutes >= Math.max(10, s.min_dwell_minutes * 0.5) &&
-    (metrics.iteration_cycles >= 1 || metrics.post_insert_edit_ratio > 0.1);
+    metrics.entropy_score >= s.min_entropy_score * 0.5 &&
+    metrics.dwell_minutes >= Math.max(10, s.min_dwell_minutes * 0.5);
 
   if (isMedium) return "medium";
 

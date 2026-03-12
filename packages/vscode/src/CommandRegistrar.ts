@@ -48,7 +48,7 @@ export function registerCommands(
         const metrics = await tracker.end();
         statusBar.showEnded();
         vscode.window.showInformationMessage(
-          `Session ended. ${metrics.dwell_minutes}m active, ${metrics.active_files} files, ${metrics.iteration_cycles} iterations.`,
+          `Session ended. ${metrics.dwell_minutes}m active, ${metrics.active_files} files, entropy: ${metrics.entropy_score}.`,
         );
       } catch (err) {
         vscode.window.showErrorMessage(
@@ -90,10 +90,10 @@ export function registerCommands(
       const items = [
         `Active editing: ${metrics.dwell_minutes} min`,
         `Files edited: ${metrics.active_files}`,
-        `Iteration cycles: ${metrics.iteration_cycles}`,
-        `Post-insert edits: ${Math.round(metrics.post_insert_edit_ratio * 100)}%`,
-        `Test runs: ${metrics.test_runs_observed}`,
-        `Paste events: ${metrics.paste_burst_count}`,
+        `Entropy: ${metrics.entropy_score}`,
+        `Displacement: ${metrics.edit_displacement_sum}`,
+        `Jitter: ${metrics.temporal_jitter_ms}ms`,
+        `Test runs: ${metrics.test_runs_total} (${metrics.test_failures_observed} failed)`,
       ];
       vscode.window.showInformationMessage(items.join(" | "));
     }),
@@ -125,10 +125,11 @@ export function registerCommands(
       output.appendLine("");
       output.appendLine(`Active editing time: ${metrics.dwell_minutes} min`);
       output.appendLine(`Files edited: ${metrics.active_files}`);
-      output.appendLine(`Iteration cycles: ${metrics.iteration_cycles}`);
-      output.appendLine(`Post-insert edit ratio: ${Math.round(metrics.post_insert_edit_ratio * 100)}%`);
-      output.appendLine(`Test runs: ${metrics.test_runs_observed}`);
-      output.appendLine(`Paste events: ${metrics.paste_burst_count} (largest: ${metrics.largest_paste_lines} lines)`);
+      output.appendLine(`Entropy score: ${metrics.entropy_score}`);
+      output.appendLine(`Edit displacement: ${metrics.edit_displacement_sum}`);
+      output.appendLine(`Temporal jitter: ${metrics.temporal_jitter_ms} ms`);
+      output.appendLine(`Test runs: ${metrics.test_runs_total} (${metrics.test_failures_observed} failed)`);
+      output.appendLine(`Test failure ratio: ${Math.round(metrics.test_failure_ratio * 100)}%`);
       output.show();
     }),
 

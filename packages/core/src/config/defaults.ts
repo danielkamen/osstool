@@ -1,9 +1,4 @@
 export const IDLE_THRESHOLD_MS = 5 * 60 * 1000;
-export const PASTE_THRESHOLD_LINES = 5;
-export const SEGMENT_GAP_MS = 10 * 60 * 1000;
-export const ITERATION_GAP_MS = 3 * 60 * 1000;
-export const POST_INSERT_BUCKET_SIZE = 10;
-export const ITERATION_BUCKET_SIZE = 50;
 export const FLUSH_INTERVAL_MS = 10_000;
 export const STATUS_BAR_UPDATE_MS = 30_000;
 export const TOOL_VERSION = "0.1.0";

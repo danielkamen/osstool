@@ -17,12 +17,20 @@ const TEST_PATTERNS: Array<{ pattern: RegExp; type: "test" | "lint" | "build" | 
 
 export class TestRunWatcher implements vscode.Disposable {
   private disposables: vscode.Disposable[] = [];
+  private pendingTasks = new Map<string, "test" | "lint" | "build" | "typecheck">();
 
   constructor(private tracker: SessionTracker) {
-    // Watch for VS Code task executions
+    // Watch for VS Code task starts to record the command type
     this.disposables.push(
       vscode.tasks.onDidStartTask((e) => {
         this.onTaskStarted(e.execution.task);
+      }),
+    );
+
+    // Watch for task process end to capture exit code
+    this.disposables.push(
+      vscode.tasks.onDidEndTaskProcess((e) => {
+        this.onTaskEnded(e.execution.task, e.exitCode);
       }),
     );
 
@@ -38,14 +46,24 @@ export class TestRunWatcher implements vscode.Disposable {
     const name = task.name.toLowerCase();
     const commandType = this.matchCommand(name);
     if (commandType) {
-      this.tracker.recordTestRun(commandType);
+      this.pendingTasks.set(task.name, commandType);
+    }
+  }
+
+  private onTaskEnded(task: vscode.Task, exitCode: number | undefined): void {
+    const commandType = this.pendingTasks.get(task.name);
+    if (commandType) {
+      this.pendingTasks.delete(task.name);
+      const passed = exitCode !== undefined ? exitCode === 0 : null;
+      this.tracker.recordTestRun(commandType, passed);
     }
   }
 
   private checkTerminalName(name: string): void {
     const commandType = this.matchCommand(name.toLowerCase());
     if (commandType) {
-      this.tracker.recordTestRun(commandType);
+      // Terminal-only runs: no exit code available at open time
+      this.tracker.recordTestRun(commandType, null);
     }
   }
 

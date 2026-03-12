@@ -1,11 +1,10 @@
 import type { SessionEvent, SessionMetrics } from "./types.js";
-import { IDLE_THRESHOLD_MS, POST_INSERT_BUCKET_SIZE } from "../config/defaults.js";
-import { detectIterationCycles } from "./IterationDetector.js";
+import { IDLE_THRESHOLD_MS } from "../config/defaults.js";
+import { computeEntropy } from "./EntropyCalculator.js";
 
 function isActivityEvent(event: SessionEvent): boolean {
   return (
     event.type === "file_edit" ||
-    event.type === "paste_burst" ||
     event.type === "test_run" ||
     event.type === "file_open"
   );
@@ -45,41 +44,6 @@ function computeDwellMs(events: SessionEvent[]): number {
   return totalMs;
 }
 
-function computePostInsertEditRatio(events: SessionEvent[]): number {
-  const insertedBuckets = new Map<string, Set<number>>();
-  const editedBuckets = new Set<string>();
-  let totalInsertedBucketCount = 0;
-
-  const sorted = [...events].sort((a, b) => a.timestamp - b.timestamp);
-
-  for (const event of sorted) {
-    if (event.type !== "file_edit") continue;
-
-    const fileHash = event.file_hash;
-
-    // Track insertions
-    if (event.lines_inserted > 0) {
-      if (!insertedBuckets.has(fileHash)) {
-        insertedBuckets.set(fileHash, new Set());
-      }
-      // Use bucket 0 as default since we don't have exact line numbers in events
-      const bucket = 0;
-      if (!insertedBuckets.get(fileHash)!.has(bucket)) {
-        insertedBuckets.get(fileHash)!.add(bucket);
-        totalInsertedBucketCount++;
-      }
-    }
-
-    // Check for post-insert edits
-    if (event.is_post_insert_edit) {
-      editedBuckets.add(`${fileHash}:0`);
-    }
-  }
-
-  if (totalInsertedBucketCount === 0) return 0;
-  return editedBuckets.size / totalInsertedBucketCount;
-}
-
 export function computeMetrics(
   events: SessionEvent[],
   sessionId: string,
@@ -104,26 +68,13 @@ export function computeMetrics(
   // Active files
   const fileHashes = new Set<string>();
   for (const event of sorted) {
-    if (event.type === "file_edit" && "file_hash" in event) {
+    if (event.type === "file_edit") {
       fileHashes.add(event.file_hash);
     }
   }
 
-  // Iteration cycles
-  const iterationCycles = detectIterationCycles(sorted);
-
-  // Post-insert edit ratio
-  const postInsertEditRatio = computePostInsertEditRatio(sorted);
-
-  // Test runs
-  const testRuns = sorted.filter((e) => e.type === "test_run").length;
-
-  // Paste stats
-  const pasteEvents = sorted.filter((e) => e.type === "paste_burst");
-  const largestPasteLines =
-    pasteEvents.length > 0
-      ? Math.max(...pasteEvents.map((e) => (e as { line_count: number }).line_count))
-      : 0;
+  // Entropy components
+  const entropy = computeEntropy(sorted);
 
   // Editors used
   const editors = new Set<string>();
@@ -142,11 +93,12 @@ export function computeMetrics(
     ended_at: endedAt,
     dwell_minutes: dwellMinutes,
     active_files: fileHashes.size,
-    iteration_cycles: iterationCycles,
-    post_insert_edit_ratio: Math.round(postInsertEditRatio * 100) / 100,
-    test_runs_observed: testRuns,
-    largest_paste_lines: largestPasteLines,
-    paste_burst_count: pasteEvents.length,
+    entropy_score: entropy.entropy_score,
+    edit_displacement_sum: entropy.edit_displacement_sum,
+    temporal_jitter_ms: entropy.temporal_jitter_ms,
+    test_runs_total: entropy.test_runs_total,
+    test_failures_observed: entropy.test_failures_observed,
+    test_failure_ratio: entropy.test_failure_ratio,
     editors_used: [...editors],
     partial_session: false,
   };

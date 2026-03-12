@@ -3,7 +3,6 @@ import type { SessionEvent, SessionMetrics, CheckpointResult } from "@contrib-pr
 import {
   SessionStore,
   SessionManager,
-  EventAccumulator,
   computeMetrics,
   FLUSH_INTERVAL_MS,
 } from "@contrib-provenance/core";
@@ -18,7 +17,6 @@ import {
 export class SessionTracker implements vscode.Disposable {
   private eventBuffer: SessionEvent[] = [];
   private flushInterval: ReturnType<typeof setInterval> | undefined;
-  private accumulator = new EventAccumulator();
   private sessionId: string | undefined;
   private disposables: vscode.Disposable[] = [];
 
@@ -37,7 +35,6 @@ export class SessionTracker implements vscode.Disposable {
       editor: "vscode",
     });
     this.sessionId = sessionId;
-    this.accumulator.reset();
     this.eventBuffer = [];
     this.flushInterval = setInterval(() => this.flush(), FLUSH_INTERVAL_MS);
     return sessionId;
@@ -54,7 +51,6 @@ export class SessionTracker implements vscode.Disposable {
     }
     const metrics = await SessionManager.endSession(this.workspaceRoot, this.sessionId);
     this.sessionId = undefined;
-    this.accumulator.reset();
     return metrics;
   }
 
@@ -67,10 +63,7 @@ export class SessionTracker implements vscode.Disposable {
       sessionId: this.sessionId,
       editor: "vscode",
     });
-    // Swap to the new session — keep tracking without interruption
     this.sessionId = result.newSessionId;
-    this.accumulator.reset();
-    // Flush interval stays running — no gap in tracking
     return result;
   }
 
@@ -79,7 +72,7 @@ export class SessionTracker implements vscode.Disposable {
     if (!shouldTrackDocument(event.document)) return;
 
     const fileHash = getFileHash(event.document.uri.fsPath, this.workspaceRoot);
-    const events = mapChangeToEvents(event, fileHash, this.accumulator);
+    const events = mapChangeToEvents(event, fileHash);
     this.eventBuffer.push(...events);
   }
 
@@ -100,12 +93,13 @@ export class SessionTracker implements vscode.Disposable {
     });
   }
 
-  recordTestRun(commandType: "test" | "lint" | "build" | "typecheck"): void {
+  recordTestRun(commandType: "test" | "lint" | "build" | "typecheck", passed: boolean | null): void {
     if (!this.sessionId) return;
     this.eventBuffer.push({
       type: "test_run",
       timestamp: Date.now(),
       command_type: commandType,
+      passed,
     });
   }
 
@@ -131,7 +125,6 @@ export class SessionTracker implements vscode.Disposable {
     if (this.flushInterval) {
       clearInterval(this.flushInterval);
     }
-    // Synchronous dispose — flush happens in deactivate()
     for (const d of this.disposables) {
       d.dispose();
     }

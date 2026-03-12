@@ -16,9 +16,9 @@ export function renderComment(
   const a = result.attestation;
   const icon = { high: "✅", medium: "⚠️", low: "🟡" }[confidence];
   const label = {
-    high: "HIGH iteration signal",
-    medium: "MEDIUM iteration signal",
-    low: "LOW iteration signal",
+    high: "HIGH entropy signal",
+    medium: "MEDIUM entropy signal",
+    low: "LOW entropy signal",
   }[confidence];
 
   let body = `## ${icon} Contribution Provenance Report
@@ -28,10 +28,10 @@ export function renderComment(
 | **Attestation** | ${result.allPassed ? "Verified" : "Verification issues (see below)"} (${a.signature_format}) |
 | **Review confidence** | ${label} |
 | **Active editing time** | ${a.session.dwell_minutes} min across ${a.session.active_files} files |
-| **Iteration cycles** | ${a.session.iteration_cycles} distinct revision phases |
-| **Post-insert edit ratio** | ${Math.round(a.session.post_insert_edit_ratio * 100)}% of inserted lines subsequently edited |
-| **Test runs observed** | ${a.session.test_runs_observed} |
-| **Largest paste burst** | ${a.session.largest_paste_lines} lines |
+| **Entropy score** | ${a.session.entropy_score} |
+| **Edit displacement** | ${a.session.edit_displacement_sum} |
+| **Temporal jitter** | ${a.session.temporal_jitter_ms} ms |
+| **Test runs** | ${a.session.test_runs_total} (${a.session.test_failures_observed} failed, ${Math.round(a.session.test_failure_ratio * 100)}% failure rate) |
 | **AI disclosure** | ${a.disclosure ?? "None provided"} |
 | **Tool version** | contrib-provenance v${a.tool_version} |
 `;

@@ -61,14 +61,10 @@ const endCommand: CommandModule<object, EndArgs> = {
       console.log(`Session ended: ${metrics.session_id}`);
       console.log(`  Duration: ${metrics.dwell_minutes} min active editing`);
       console.log(`  Files: ${metrics.active_files} edited`);
-      console.log(`  Iteration cycles: ${metrics.iteration_cycles}`);
-      console.log(
-        `  Post-insert edit ratio: ${Math.round(metrics.post_insert_edit_ratio * 100)}%`,
-      );
-      console.log(`  Test runs: ${metrics.test_runs_observed}`);
-      console.log(
-        `  Paste events: ${metrics.paste_burst_count} (largest: ${metrics.largest_paste_lines} lines)`,
-      );
+      console.log(`  Entropy score: ${metrics.entropy_score}`);
+      console.log(`  Edit displacement: ${metrics.edit_displacement_sum}`);
+      console.log(`  Temporal jitter: ${metrics.temporal_jitter_ms} ms`);
+      console.log(`  Test runs: ${metrics.test_runs_total} (${metrics.test_failures_observed} failed)`);
     } catch (err) {
       console.error(`Error: ${(err as Error).message}`);
       process.exit(1);
@@ -98,14 +94,10 @@ const checkpointCommand: CommandModule<object, CheckpointArgs> = {
       console.log(`Session captured: ${result.endedSessionId}`);
       console.log(`  Duration: ${result.metrics.dwell_minutes} min active editing`);
       console.log(`  Files: ${result.metrics.active_files} edited`);
-      console.log(`  Iteration cycles: ${result.metrics.iteration_cycles}`);
-      console.log(
-        `  Post-insert edit ratio: ${Math.round(result.metrics.post_insert_edit_ratio * 100)}%`,
-      );
-      console.log(`  Test runs: ${result.metrics.test_runs_observed}`);
-      console.log(
-        `  Paste events: ${result.metrics.paste_burst_count} (largest: ${result.metrics.largest_paste_lines} lines)`,
-      );
+      console.log(`  Entropy score: ${result.metrics.entropy_score}`);
+      console.log(`  Edit displacement: ${result.metrics.edit_displacement_sum}`);
+      console.log(`  Temporal jitter: ${result.metrics.temporal_jitter_ms} ms`);
+      console.log(`  Test runs: ${result.metrics.test_runs_total} (${result.metrics.test_failures_observed} failed)`);
       console.log("");
       console.log(`New session started: ${result.newSessionId}`);
       console.log("Tracking continues. Run `provenance export` when ready.");
