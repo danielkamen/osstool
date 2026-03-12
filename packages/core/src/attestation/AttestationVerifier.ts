@@ -11,6 +11,10 @@ export function getVerificationPayload(attestation: AttestationV1): Buffer {
 export async function verifyAttestationSignature(
   attestation: AttestationV1,
 ): Promise<boolean> {
+  if (!attestation.signature || !attestation.signature_format) {
+    return false;
+  }
+
   const payload = getVerificationPayload(attestation);
 
   if (attestation.signature_format === "gpg") {

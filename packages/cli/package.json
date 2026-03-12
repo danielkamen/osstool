@@ -8,6 +8,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsup",
+    "postinstall": "node dist/postinstall.js",
     "test": "vitest run",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"

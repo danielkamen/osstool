@@ -1,15 +1,18 @@
 import * as vscode from "vscode";
+import { existsSync } from "node:fs";
+import { readFile, writeFile, unlink } from "node:fs/promises";
+import { join } from "node:path";
 import type { SessionEvent, SessionMetrics, CheckpointResult } from "@contrib-provenance/core";
 import {
   SessionStore,
   SessionManager,
   computeMetrics,
   FLUSH_INTERVAL_MS,
+  PROVENANCE_DIR,
 } from "@contrib-provenance/core";
 import {
   shouldTrackDocument,
   getFileHash,
-  getWorkspaceRoot,
   mapChangeToEvents,
   mapOpenToEvent,
 } from "./EditorBridge.js";
@@ -19,6 +22,7 @@ export class SessionTracker implements vscode.Disposable {
   private flushInterval: ReturnType<typeof setInterval> | undefined;
   private sessionId: string | undefined;
   private disposables: vscode.Disposable[] = [];
+  private checkpointWatcher: vscode.FileSystemWatcher | undefined;
 
   constructor(private workspaceRoot: string) {}
 
@@ -110,7 +114,7 @@ export class SessionTracker implements vscode.Disposable {
     return computeMetrics(events, this.sessionId);
   }
 
-  private async flush(): Promise<void> {
+  async flush(): Promise<void> {
     if (!this.sessionId || this.eventBuffer.length === 0) return;
 
     const events = [...this.eventBuffer];
@@ -121,9 +125,51 @@ export class SessionTracker implements vscode.Disposable {
     }
   }
 
+  /**
+   * Watch for checkpoint-trigger files from the pre-push hook.
+   * When detected, checkpoint the session and write a done file
+   * so the hook can read the metrics.
+   */
+  startCheckpointWatcher(): void {
+    const provDir = join(this.workspaceRoot, PROVENANCE_DIR);
+    const triggerPattern = new vscode.RelativePattern(provDir, "checkpoint-trigger");
+
+    this.checkpointWatcher = vscode.workspace.createFileSystemWatcher(triggerPattern);
+    this.checkpointWatcher.onDidCreate(async () => {
+      await this.handleCheckpointTrigger();
+    });
+    this.checkpointWatcher.onDidChange(async () => {
+      await this.handleCheckpointTrigger();
+    });
+
+    this.disposables.push(this.checkpointWatcher);
+  }
+
+  private async handleCheckpointTrigger(): Promise<void> {
+    const provDir = join(this.workspaceRoot, PROVENANCE_DIR);
+    const triggerPath = join(provDir, "checkpoint-trigger");
+
+    if (!existsSync(triggerPath) || !this.isTracking) return;
+
+    try {
+      const nonce = (await readFile(triggerPath, "utf-8")).trim();
+      const result = await this.checkpoint();
+      const donePath = join(provDir, `checkpoint-done-${nonce}`);
+      await writeFile(donePath, JSON.stringify(result.metrics));
+
+      // Clean up trigger
+      await unlink(triggerPath).catch(() => {});
+    } catch {
+      // Silent — don't interfere with the push
+    }
+  }
+
   dispose(): void {
     if (this.flushInterval) {
       clearInterval(this.flushInterval);
+    }
+    if (this.checkpointWatcher) {
+      this.checkpointWatcher.dispose();
     }
     for (const d of this.disposables) {
       d.dispose();

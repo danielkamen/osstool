@@ -9,7 +9,7 @@ export function formatExport(attestation: AttestationV1): string {
   lines.push(`Repo:          ${attestation.repo}`);
   lines.push(`Commit:        ${attestation.commit}`);
   lines.push(`Identity:      ${attestation.identity.slice(0, 16)}...`);
-  lines.push(`Signature:     ${attestation.signature_format.toUpperCase()} ✓`);
+  lines.push(`Signature:     ${attestation.signature_format ? attestation.signature_format.toUpperCase() + " \u2713" : "unsigned"}`);
   lines.push("");
   lines.push("Session Metrics:");
   lines.push(`  Active editing time:    ${attestation.session.dwell_minutes} min`);

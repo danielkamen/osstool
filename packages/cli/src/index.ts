@@ -5,12 +5,14 @@ import { sessionCommand } from "./commands/session.js";
 import { inspectCommand } from "./commands/inspect.js";
 import { exportCommand } from "./commands/export.js";
 import { attachCommand } from "./commands/attach.js";
+import { hookCommand } from "./commands/hook.js";
 
 yargs(hideBin(process.argv))
   .scriptName("provenance")
   .command(initCommand)
-  .command(sessionCommand)
+  .command(hookCommand)
   .command(inspectCommand)
+  .command(sessionCommand)
   .command(exportCommand)
   .command(attachCommand)
   .demandCommand(1, "You must specify a command")

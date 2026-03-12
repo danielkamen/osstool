@@ -1,24 +1,22 @@
 export const PRE_PUSH_HOOK = `#!/bin/sh
 # contrib-provenance pre-push hook
-# This hook runs before push and reminds about unexported sessions.
-# It NEVER blocks push.
+# Computes provenance metrics and attaches them to the push.
+# This hook NEVER blocks push.
 
-PROVENANCE_DIR=".provenance"
-
-if [ ! -d "$PROVENANCE_DIR" ]; then
-  exit 0
+if command -v npx >/dev/null 2>&1; then
+  npx --yes @contrib-provenance/cli hook pre-push "$@" 2>/dev/null || true
 fi
 
-# Check for ended but unexported sessions
-if command -v provenance >/dev/null 2>&1; then
-  UNEXPORTED=$(provenance inspect --all 2>/dev/null | grep "ended" || true)
-  if [ -n "$UNEXPORTED" ]; then
-    echo ""
-    echo "Contribution Provenance: You have an unexported session."
-    echo "   Run 'provenance export' to create a signed attestation."
-    echo "   (Push continues regardless)"
-    echo ""
-  fi
+exit 0
+`;
+
+export const POST_COMMIT_HOOK = `#!/bin/sh
+# contrib-provenance post-commit hook
+# Records commit markers in active provenance sessions.
+# This hook NEVER blocks commits.
+
+if command -v npx >/dev/null 2>&1; then
+  npx --yes @contrib-provenance/cli hook post-commit 2>/dev/null || true
 fi
 
 exit 0

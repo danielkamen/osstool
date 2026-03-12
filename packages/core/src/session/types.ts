@@ -69,6 +69,8 @@ export interface CheckpointResult {
   newSessionId: string;
 }
 
+export type SignalSource = "vscode" | "git" | "hybrid" | "server";
+
 export interface SessionMetrics {
   session_id: string;
   started_at: string;
@@ -83,4 +85,18 @@ export interface SessionMetrics {
   test_failure_ratio: number;
   editors_used: string[];
   partial_session: boolean;
+  signal_source?: SignalSource;
 }
+
+export interface GitDerivedMetrics {
+  signal_source: "git";
+  dwell_minutes: number;
+  active_files: number;
+  commit_count: number;
+  diff_churn: number;
+  entropy_score: number;
+  commit_temporal_jitter_ms: number;
+  editors_used: string[];
+}
+
+export type ProvenanceMetrics = SessionMetrics | GitDerivedMetrics;

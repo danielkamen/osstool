@@ -54,6 +54,12 @@ export const ProvenanceYmlSchema = z.object({
       labels: z.array(z.string()).default(["dependencies", "automated"]),
     })
     .default({}),
+
+  server_metrics: z.boolean().default(true),
+  cross_validate: z.boolean().default(true),
+  no_attestation_action: z
+    .enum(["remind", "label-only", "ignore"])
+    .default("remind"),
 });
 
 export type ProvenanceYmlConfig = z.infer<typeof ProvenanceYmlSchema>;

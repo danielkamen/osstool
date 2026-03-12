@@ -1,3 +1,5 @@
+import type { SignalSource } from "../session/types.js";
+
 export type SigningMethod = "gpg" | "ssh";
 
 export interface AttestationV1 {
@@ -19,12 +21,15 @@ export interface AttestationV1 {
     test_failure_ratio: number;
     editors_used: string[];
     partial_session: boolean;
+    signal_source?: SignalSource;
+    commit_count?: number;
+    diff_churn?: number;
   };
   disclosure: string | null;
   tool_version: string;
   timestamp: string;
-  signature: string;
-  signature_format: SigningMethod;
+  signature?: string;
+  signature_format?: SigningMethod;
 }
 
 export interface Check {

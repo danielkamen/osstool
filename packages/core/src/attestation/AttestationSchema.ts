@@ -19,12 +19,15 @@ export const AttestationSchemaV1 = z.object({
     test_failure_ratio: z.number().min(0).max(1),
     editors_used: z.array(z.string()),
     partial_session: z.boolean(),
+    signal_source: z.enum(["vscode", "git", "hybrid", "server"]).optional(),
+    commit_count: z.number().int().min(0).optional(),
+    diff_churn: z.number().min(0).optional(),
   }),
   disclosure: z.string().nullable(),
   tool_version: z.string(),
   timestamp: z.string().datetime(),
-  signature: z.string(),
-  signature_format: z.enum(["gpg", "ssh"]),
+  signature: z.string().optional(),
+  signature_format: z.enum(["gpg", "ssh"]).optional(),
 });
 
 export type AttestationV1Parsed = z.infer<typeof AttestationSchemaV1>;

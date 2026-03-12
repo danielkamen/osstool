@@ -19,6 +19,10 @@ export async function verifySignature(
 ): Promise<SignatureResult> {
   const payload = getVerificationPayload(attestation);
 
+  if (!attestation.signature || !attestation.signature_format) {
+    return { valid: false, detail: "Attestation is unsigned." };
+  }
+
   try {
     if (attestation.signature_format === "gpg") {
       return await verifyGpgSig(payload, attestation.signature, octokit, prAuthor);

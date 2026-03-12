@@ -37,14 +37,6 @@
   "contributes": {
     "commands": [
       {
-        "command": "provenance.sessionStart",
-        "title": "Provenance: Start Session"
-      },
-      {
-        "command": "provenance.sessionEnd",
-        "title": "Provenance: End Session"
-      },
-      {
         "command": "provenance.sessionCheckpoint",
         "title": "Provenance: Checkpoint Session (capture & continue)"
       },
@@ -54,11 +46,7 @@
       },
       {
         "command": "provenance.inspect",
-        "title": "Provenance: Inspect Current Session"
-      },
-      {
-        "command": "provenance.export",
-        "title": "Provenance: Export Attestation"
+        "title": "Provenance: Inspect Session"
       }
     ],
     "configuration": {

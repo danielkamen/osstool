@@ -49,25 +49,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
   );
 
-  // Auto-start session if configured
-  const autoStart = vscode.workspace
-    .getConfiguration("provenance")
-    .get<boolean>("autoStart", true);
-
-  if (autoStart) {
-    try {
-      await tracker.start();
-      await statusBar.updateDisplay();
-    } catch {
-      // Session may already be active from CLI, silently ignore
-    }
+  // Auto-start session — always on, no manual intervention needed
+  try {
+    await tracker.start();
+    await statusBar.updateDisplay();
+  } catch {
+    // Session may already be active from CLI, silently ignore
   }
+
+  // Start watching for checkpoint triggers from pre-push hook
+  tracker.startCheckpointWatcher();
 }
 
 export async function deactivate(): Promise<void> {
+  // Flush buffer only — do NOT end the session.
+  // Session data persists for the pre-push hook to pick up.
   if (tracker?.isTracking) {
     try {
-      await tracker.end();
+      await tracker.flush();
     } catch {
       // Best effort
     }

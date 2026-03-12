@@ -11,6 +11,9 @@ export type {
   SessionMetrics,
   SessionStatus,
   CheckpointResult,
+  SignalSource,
+  GitDerivedMetrics,
+  ProvenanceMetrics,
 } from "./session/types.js";
 
 // Attestation types
@@ -25,6 +28,7 @@ export type {
 export { computeMetrics } from "./session/MetricsComputer.js";
 export { computeEntropy } from "./session/EntropyCalculator.js";
 export type { EntropyComponents } from "./session/EntropyCalculator.js";
+export { computeGitMetrics } from "./session/GitMetricsComputer.js";
 
 // Session management
 export * as SessionManager from "./session/SessionManager.js";
@@ -76,4 +80,10 @@ export {
   getGitEmail,
   getGitConfig,
   parseRemoteToSlug,
+  getMergeBase,
+  getCommitLog,
+  getDiffNumstat,
+  getCurrentBranch,
+  getDefaultBranch,
 } from "./util/git.js";
+export type { CommitLogEntry, DiffNumstatEntry } from "./util/git.js";

@@ -6,6 +6,7 @@ import {
   isGitRepo,
   getRemoteUrl,
   parseRemoteToSlug,
+  getDefaultBranch,
   getProvenanceDir,
   getSessionsDir,
   getAttestationsDir,
@@ -13,12 +14,13 @@ import {
   isoNow,
 } from "@contrib-provenance/core";
 import type { ProjectConfig } from "@contrib-provenance/core";
-import { PRE_PUSH_HOOK } from "../hooks/pre-push.js";
+import { PRE_PUSH_HOOK, POST_COMMIT_HOOK } from "../hooks/pre-push.js";
 
 interface InitArgs {
-  signing: "gpg" | "ssh" | "auto";
+  signing: "gpg" | "ssh" | "auto" | "none";
   hooks: boolean;
   force: boolean;
+  "base-branch"?: string;
 }
 
 export const initCommand: CommandModule<object, InitArgs> = {
@@ -28,7 +30,7 @@ export const initCommand: CommandModule<object, InitArgs> = {
     yargs
       .option("signing", {
         type: "string",
-        choices: ["gpg", "ssh", "auto"] as const,
+        choices: ["gpg", "ssh", "auto", "none"] as const,
         default: "auto" as const,
         describe: "Signing method",
       })
@@ -41,6 +43,10 @@ export const initCommand: CommandModule<object, InitArgs> = {
         type: "boolean",
         default: false,
         describe: "Reinitialize even if .provenance/ exists",
+      })
+      .option("base-branch", {
+        type: "string",
+        describe: "Base branch for fork-point detection (auto-detected if omitted)",
       }),
   handler: async (argv) => {
     const cwd = process.cwd();
@@ -66,7 +72,7 @@ export const initCommand: CommandModule<object, InitArgs> = {
     // get automatic VS Code extension activation on clone
     await writeFile(
       join(provDir, ".gitignore"),
-      "sessions/\nattestations/\n",
+      "sessions/\nattestations/\ncheckpoint-*\n",
     );
 
     // Get remote
@@ -78,6 +84,16 @@ export const initCommand: CommandModule<object, InitArgs> = {
       // No remote configured
     }
 
+    // Detect base branch
+    let baseBranch = argv["base-branch"] ?? "main";
+    if (!argv["base-branch"]) {
+      try {
+        baseBranch = await getDefaultBranch(cwd);
+      } catch {
+        // Keep default
+      }
+    }
+
     // Write config
     const config: ProjectConfig = {
       version: 1,
@@ -86,26 +102,38 @@ export const initCommand: CommandModule<object, InitArgs> = {
       signing_method: argv.signing,
       hooks: {
         pre_push: false,
+        post_commit: false,
       },
+      base_branch: baseBranch,
     };
     await writeFile(getConfigPath(cwd), JSON.stringify(config, null, 2));
 
-    // Install pre-push hook placeholder
+    // Install hooks
     if (argv.hooks) {
-      const hookPath = join(cwd, ".git", "hooks", "pre-push");
-      const hookContent = PRE_PUSH_HOOK;
-      await mkdir(join(cwd, ".git", "hooks"), { recursive: true });
-      await writeFile(hookPath, hookContent);
-      await chmod(hookPath, 0o755);
+      const hooksDir = join(cwd, ".git", "hooks");
+      await mkdir(hooksDir, { recursive: true });
+
+      // Pre-push hook
+      const prePushPath = join(hooksDir, "pre-push");
+      await writeFile(prePushPath, PRE_PUSH_HOOK);
+      await chmod(prePushPath, 0o755);
       config.hooks.pre_push = true;
+
+      // Post-commit hook
+      const postCommitPath = join(hooksDir, "post-commit");
+      await writeFile(postCommitPath, POST_COMMIT_HOOK);
+      await chmod(postCommitPath, 0o755);
+      config.hooks.post_commit = true;
+
       await writeFile(getConfigPath(cwd), JSON.stringify(config, null, 2));
     }
 
     console.log(`Provenance initialized in ${provDir}`);
     console.log(`  Remote: ${remote}`);
+    console.log(`  Base branch: ${baseBranch}`);
     console.log(`  Signing: ${argv.signing}`);
     if (argv.hooks) {
-      console.log("  Pre-push hook: installed");
+      console.log("  Hooks: pre-push, post-commit installed");
     }
   },
 };
