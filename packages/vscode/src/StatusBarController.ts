@@ -29,7 +29,7 @@ export class StatusBarController implements vscode.Disposable {
       const metrics = await this.tracker.getMetrics();
       if (metrics) {
         this.item.text = `$(pulse) Provenance: ${metrics.dwell_minutes}m`;
-        this.item.tooltip = `Active: ${metrics.active_files} files, entropy: ${metrics.entropy_score}`;
+        this.item.tooltip = `Active: ${metrics.active_files} files, edit complexity: ${metrics.entropy_score}`;
         this.item.command = "provenance.sessionStatus";
       }
     } catch {

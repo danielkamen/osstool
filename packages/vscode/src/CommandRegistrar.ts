@@ -46,9 +46,9 @@ export function registerCommands(
       const items = [
         `Active editing: ${metrics.dwell_minutes} min`,
         `Files edited: ${metrics.active_files}`,
-        `Entropy: ${metrics.entropy_score}`,
-        `Displacement: ${metrics.edit_displacement_sum}`,
-        `Jitter: ${metrics.temporal_jitter_ms}ms`,
+        `Edit complexity: ${metrics.entropy_score}`,
+        `Change spread: ${metrics.edit_displacement_sum}`,
+        `Pace variation: ${metrics.temporal_jitter_ms}ms`,
         `Test runs: ${metrics.test_runs_total} (${metrics.test_failures_observed} failed)`,
       ];
       vscode.window.showInformationMessage(items.join(" | "));
@@ -81,9 +81,9 @@ export function registerCommands(
       output.appendLine("");
       output.appendLine(`Active editing time: ${metrics.dwell_minutes} min`);
       output.appendLine(`Files edited: ${metrics.active_files}`);
-      output.appendLine(`Entropy score: ${metrics.entropy_score}`);
-      output.appendLine(`Edit displacement: ${metrics.edit_displacement_sum}`);
-      output.appendLine(`Temporal jitter: ${metrics.temporal_jitter_ms} ms`);
+      output.appendLine(`Edit complexity: ${metrics.entropy_score}`);
+      output.appendLine(`Change spread: ${metrics.edit_displacement_sum}`);
+      output.appendLine(`Pace variation: ${metrics.temporal_jitter_ms} ms`);
       output.appendLine(`Test runs: ${metrics.test_runs_total} (${metrics.test_failures_observed} failed)`);
       output.appendLine(`Test failure ratio: ${Math.round(metrics.test_failure_ratio * 100)}%`);
       output.show();

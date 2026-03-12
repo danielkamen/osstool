@@ -29,9 +29,9 @@ export function formatInspect(
   lines.push(line("", w));
   lines.push(line(`Active editing time:      ${metrics.dwell_minutes} minutes`, w));
   lines.push(line(`Files edited:             ${metrics.active_files}`, w));
-  lines.push(line(`Entropy score:            ${metrics.entropy_score}`, w));
-  lines.push(line(`Edit displacement:        ${metrics.edit_displacement_sum}`, w));
-  lines.push(line(`Temporal jitter:          ${metrics.temporal_jitter_ms} ms`, w));
+  lines.push(line(`Edit complexity:           ${metrics.entropy_score}`, w));
+  lines.push(line(`Change spread:            ${metrics.edit_displacement_sum}`, w));
+  lines.push(line(`Pace variation:           ${metrics.temporal_jitter_ms} ms`, w));
   lines.push(line(`Test runs:                ${metrics.test_runs_total}`, w));
   lines.push(line(`Test failures:            ${metrics.test_failures_observed}`, w));
   lines.push(line(`Test failure ratio:       ${Math.round(metrics.test_failure_ratio * 100)}%`, w));

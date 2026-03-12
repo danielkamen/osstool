@@ -61,7 +61,7 @@ function parsePR(prArg: string, remoteSlug: string): { owner: string; repo: stri
 
 export const attachCommand: CommandModule<object, AttachArgs> = {
   command: "attach <pr>",
-  describe: "Attach an attestation to a pull request",
+  describe: "Attach an activity snapshot to a pull request",
   builder: (yargs) =>
     yargs
       .positional("pr", {
@@ -143,16 +143,16 @@ export const attachCommand: CommandModule<object, AttachArgs> = {
     const editors = (session.editors_used ?? []).join(", ") || "Unknown";
 
     const commentBody = [
-      `## Contribution Provenance Attestation`,
+      `## Contribution Provenance`,
       ``,
       `| Metric | Value |`,
       `| --- | --- |`,
       `| **Session** | ${startedAt} \u2192 ${endedAt} |`,
-      `| **Dwell time** | ${session.dwell_minutes ?? "?"} min |`,
-      `| **Active files** | ${session.active_files ?? "?"} |`,
-      `| **Entropy score** | ${session.entropy_score ?? 0} |`,
-      `| **Edit displacement** | ${session.edit_displacement_sum ?? 0} |`,
-      `| **Temporal jitter** | ${session.temporal_jitter_ms ?? 0} ms |`,
+      `| **Active editing time** | ${session.dwell_minutes ?? "?"} min |`,
+      `| **Files touched** | ${session.active_files ?? "?"} |`,
+      `| **Edit complexity** | ${session.entropy_score ?? 0} |`,
+      `| **Change spread** | ${session.edit_displacement_sum ?? 0} |`,
+      `| **Pace variation** | ${session.temporal_jitter_ms ?? 0} ms |`,
       `| **Test runs** | ${session.test_runs_total ?? 0} (${session.test_failures_observed ?? 0} failed) |`,
       `| **Editor** | ${editors} |`,
       `| **AI disclosure** | ${disclosure} |`,
@@ -192,10 +192,10 @@ export const attachCommand: CommandModule<object, AttachArgs> = {
         env: { ...process.env, GH_TOKEN: token },
       });
 
-      console.log(`Attestation posted to ${prInfo.owner}/${prInfo.repo}#${prInfo.number}`);
+      console.log(`Snapshot posted to ${prInfo.owner}/${prInfo.repo}#${prInfo.number}`);
     } catch (err) {
-      console.error(`Failed to post attestation: ${(err as Error).message}`);
-      console.error(`Attestation saved at: ${attestationPath}`);
+      console.error(`Failed to post snapshot: ${(err as Error).message}`);
+      console.error(`Snapshot saved at: ${attestationPath}`);
       console.error("Upload manually or retry.");
       process.exit(1);
     }

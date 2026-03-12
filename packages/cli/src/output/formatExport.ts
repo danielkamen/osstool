@@ -14,9 +14,9 @@ export function formatExport(attestation: AttestationV1): string {
   lines.push("Session Metrics:");
   lines.push(`  Active editing time:    ${attestation.session.dwell_minutes} min`);
   lines.push(`  Files edited:           ${attestation.session.active_files}`);
-  lines.push(`  Entropy score:          ${attestation.session.entropy_score}`);
-  lines.push(`  Edit displacement:      ${attestation.session.edit_displacement_sum}`);
-  lines.push(`  Temporal jitter:        ${attestation.session.temporal_jitter_ms} ms`);
+  lines.push(`  Edit complexity:        ${attestation.session.entropy_score}`);
+  lines.push(`  Change spread:          ${attestation.session.edit_displacement_sum}`);
+  lines.push(`  Pace variation:         ${attestation.session.temporal_jitter_ms} ms`);
   lines.push(`  Test runs:              ${attestation.session.test_runs_total} (${attestation.session.test_failures_observed} failed)`);
   lines.push(`  Editors used:           ${attestation.session.editors_used.join(", ") || "unknown"}`);
   lines.push("");

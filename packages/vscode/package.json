@@ -1,7 +1,7 @@
 {
   "name": "contrib-provenance-vscode",
   "displayName": "Contribution Provenance",
-  "description": "Track your development process for transparent, signed PR attestations",
+  "description": "Prove your PR was hand-written — track editing activity and attach signed proof to pull requests",
   "version": "0.1.0",
   "publisher": "caiman",
   "license": "MIT",

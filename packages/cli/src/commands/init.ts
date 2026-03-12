@@ -46,7 +46,7 @@ export const initCommand: CommandModule<object, InitArgs> = {
       })
       .option("base-branch", {
         type: "string",
-        describe: "Base branch for fork-point detection (auto-detected if omitted)",
+        describe: "Base branch to compare against (auto-detected if omitted)",
       }),
   handler: async (argv) => {
     const cwd = process.cwd();

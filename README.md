@@ -5,7 +5,7 @@
 <h1 align="center">Contribution Provenance</h1>
 
 <p align="center">
-  <strong>Transparent, signed attestations of developer engagement for code review.</strong>
+  <strong>Help OSS maintainers cut through low-effort PR spam. Signed proof that a human actually wrote the code.</strong>
 </p>
 
 <p align="center">
@@ -25,9 +25,11 @@
 
 ---
 
-Contribution Provenance is a toolchain that generates **cryptographically signed attestations** of how code was written. It gives code reviewers a lightweight, voluntary signal: *"Does this PR show evidence that a human engaged with the codebase, iterated on changes, and exercised the code?"*
+Open-source maintainers are drowning in AI-generated drive-by PRs — mass-produced patches from agents that never ran the tests, never read the surrounding code, and never iterated on the change. Reviewing these wastes hours and burns out maintainers.
 
-**Attestation is always optional.** Missing attestation is never an accusation — unattested PRs simply follow the standard review queue. Attested PRs can be fast-tracked.
+Contribution Provenance gives contributors a way to **prove they actually did the work**. It tracks editing time, revisions, test runs, and paste patterns locally, then packages them into a signed snapshot attached to the PR. Maintainers can prioritize PRs that show real engagement and let the fire-and-forget ones wait.
+
+**Always optional.** No attestation? No problem — the PR goes through normal review. Attested PRs just get fast-tracked.
 
 ## Quickstart
 
@@ -47,7 +49,7 @@ provenance session start
 
 provenance session end
 
-# Generate a signed attestation and attach it to your PR
+# Generate a signed snapshot and attach it to your PR
 provenance export
 provenance attach <PR-URL>
 ```
@@ -65,14 +67,14 @@ labels:
   medium: provenance-medium
   low: provenance-low
 signals:
-  min_dwell_minutes: 15
-  min_iteration_cycles: 1
-  min_post_insert_ratio: 0.25
+  min_active_minutes: 15
+  min_revision_passes: 1
+  min_rework_ratio: 0.25
 notifications:
   comment_on_pr: true
 ```
 
-Then add the GitHub Action to your CI workflow. It will automatically verify attestations on incoming PRs and apply confidence labels.
+Then add the GitHub Action to your CI workflow. It checks incoming PRs for activity snapshots and labels them so you can prioritize real contributions over drive-by agent PRs.
 
 ## How It Works
 
@@ -94,24 +96,24 @@ Developer                          GitHub
   provenance attach ───────┴──────────────▶│
 ```
 
-The system tracks **aggregate metrics only** — never raw keystrokes, file contents, or clipboard data. It measures:
+The system tracks **totals and counts only** — never raw keystrokes, file contents, or clipboard data. It measures:
 
-| Signal | What it captures |
+| What we track | What it tells the reviewer |
 |---|---|
-| **Dwell time** | Total active editing time (5-min idle threshold) |
-| **Iteration cycles** | Revisits to previously edited regions after breaks |
-| **Post-insert edit ratio** | Lines inserted then later refined (vs. fire-and-forget) |
-| **Test runs observed** | Detected test/lint/build executions |
-| **Paste bursts** | Large single-operation inserts (≥5 lines) |
+| **Active editing time** | How long the contributor actually spent in the editor (pauses after 5 min of inactivity) |
+| **Revision passes** | Did they go back and rework earlier code, or was it a single dump? |
+| **Rework ratio** | What % of new lines were later refined — real coding involves iteration |
+| **Test runs** | Did they actually run the tests before opening the PR? |
+| **Bulk pastes** | Large single-shot inserts (≥5 lines) — common in AI-generated PRs |
 
-These signals combine into a **confidence level**:
+These combine into an **activity level** on the PR:
 
-| Level | Criteria |
+| Level | What it means |
 |---|---|
-| **High** | >30 min dwell + 2+ iterations + >25% post-insert edits + test run |
-| **Medium** | >10 min dwell + 1 iteration, or partial criteria met |
-| **Low** | Attestation present but signals below thresholds |
-| **None** | No attestation provided |
+| **High** | 30+ min editing, multiple revision passes, reworked their code, ran tests |
+| **Medium** | 10+ min editing with at least one revision pass, or partial criteria met |
+| **Low** | Snapshot present but minimal hands-on activity detected |
+| **None** | No snapshot provided — normal review queue, no judgment |
 
 ## Packages
 
@@ -119,14 +121,14 @@ This is a monorepo managed with [Turbo](https://turbo.build). Each package has a
 
 | Package | Description |
 |---|---|
-| [`packages/core`](packages/core) | Session types, metrics computation, attestation schema (Zod), crypto (GPG/SSH signing & verification), storage |
+| [`packages/core`](packages/core) | Session types, metrics, schema (Zod), signing & verification, storage |
 | [`packages/cli`](packages/cli) | `provenance` CLI — `init`, `session start/end`, `inspect`, `export`, `attach` |
-| [`packages/vscode`](packages/vscode) | VS Code extension — auto-tracks edits, focus, test runs; status bar integration |
-| [`packages/action`](packages/action) | GitHub Action — verifies attestations on PRs, applies labels, posts summary comments |
+| [`packages/vscode`](packages/vscode) | VS Code extension — auto-tracks edits, focus, test runs; status bar |
+| [`packages/action`](packages/action) | GitHub Action — checks PRs for snapshots, labels them, posts summary comments |
 
-## Attestation Format
+## Snapshot Format
 
-Attestations follow the [`contribution-provenance/v1` schema](docs/spec/attestation-v1.schema.json):
+Activity snapshots follow the [`contribution-provenance/v1` schema](docs/spec/attestation-v1.schema.json):
 
 ```jsonc
 {
@@ -154,7 +156,7 @@ Attestations follow the [`contribution-provenance/v1` schema](docs/spec/attestat
 }
 ```
 
-Attestations are bound to a specific commit SHA and signed with the developer's GPG or SSH key, preventing replay and tampering.
+Each snapshot is tied to a specific commit and signed with the developer's GPG or SSH key, so it can't be faked or reused on a different PR.
 
 ## Configuration
 
@@ -179,9 +181,9 @@ labels:
   none: provenance-none            # optional
 
 signals:
-  min_dwell_minutes: 15
-  min_iteration_cycles: 1
-  min_post_insert_ratio: 0.25
+  min_active_minutes: 15
+  min_revision_passes: 1
+  min_rework_ratio: 0.25
 
 bypass:
   users: ["dependabot[bot]"]       # skip verification for bots
@@ -205,31 +207,30 @@ fast_lane:
 
 ## Privacy
 
-Contribution Provenance is designed with privacy as a hard constraint, not a feature toggle.
+Privacy is a hard constraint, not a toggle.
 
 **Never collected:**
-- Raw keystrokes or character-level input
+- Keystrokes or what you typed
 - File contents or diffs
 - Clipboard data
-- Command arguments (only presence of test/build runs)
+- Command arguments (only "a test ran", not what test)
 - Network traffic
-- Biometric or typing-cadence fingerprints
+- Typing-style fingerprints
 
 **What is collected:**
-- Aggregate time-based metrics (total minutes, not timestamps of individual actions)
-- Event counts (files edited, test runs, paste bursts)
+- Totals: minutes spent editing, files touched, test runs, bulk paste counts
 - A hash of your Git email (not the email itself)
 
-All data stays local until you explicitly run `provenance export`. You can inspect the full attestation with `provenance inspect` before sharing it.
+Everything stays on your machine until you run `provenance export`. You can review exactly what will be shared with `provenance inspect` first.
 
 ## Known Limitations
 
-This project is honest about what it can and cannot detect:
+This tool is honest about its blind spots:
 
-- **AI agents in the editor** — Copilot-style suggestions can look like real edits. VS Code API hooks help but aren't perfect.
-- **Multi-editor workflows** — Switching between editors may create coverage gaps, flagged as `partial_session: true`.
-- **Legitimate large pastes** — Code motion, codemods, and vendoring are valid workflows that produce paste-like signals.
-- **Sophisticated spoofing** — A determined actor could mimic gradual insertion. This is why attestation is a *soft signal*, never a gate.
+- **Copilot / inline AI** — Accepting a Copilot suggestion looks like a normal edit. We surface accepted-suggestion counts where the IDE exposes them, but it's not perfect.
+- **Multiple editors** — If you split work across VS Code and Vim, the tool only sees the VS Code side. Gaps are flagged as `partial_session: true`.
+- **Legit large pastes** — Moving code between files, running codemods, or vendoring types all look like bulk pastes. Paste size alone is never treated as a red flag.
+- **Determined spoofing** — Someone could script an agent to drip-feed code slowly. That's why this is a *soft signal* for prioritization, never a gate.
 
 ## Development
 

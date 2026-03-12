@@ -47,7 +47,9 @@
       "Bash(git commit:*)",
       "Bash(wc -l /home/dan/osstool/packages/core/src/**/*.ts /home/dan/osstool/packages/cli/src/**/*.ts /home/dan/osstool/packages/action/src/**/*.ts /home/dan/osstool/packages/vscode/src/*.ts)",
       "Bash(npm test:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(rm -rf node_modules packages/*/node_modules)",
+      "Bash(npm ci:*)"
     ],
     "additionalDirectories": [
       "/tmp",

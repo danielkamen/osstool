@@ -40,7 +40,7 @@ async function promptDisclosure(): Promise<string | null> {
 
 export const exportCommand: CommandModule<object, ExportArgs> = {
   command: "export",
-  describe: "Export a signed attestation from a completed session",
+  describe: "Export a signed activity snapshot from a completed session",
   builder: (yargs) =>
     yargs
       .option("session", {

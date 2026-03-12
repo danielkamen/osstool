@@ -1,14 +1,14 @@
 # Contribution Provenance for VS Code
 
-Automatically track your development sessions and generate cryptographically signed attestations of developer engagement for code review.
+Automatically track your coding sessions so you can prove to maintainers that your PR was actually hand-written — not dumped by an agent.
 
 ## Features
 
 - **Automatic session tracking** — starts recording when you open a provenance-enabled repo
-- **Edit metrics** — tracks dwell time, iteration cycles, and post-insert edit ratio without capturing keystrokes or file contents
-- **Test run detection** — monitors terminal output for test, lint, and build executions
-- **Status bar integration** — shows session state and elapsed time at a glance
-- **Export & attach** — generate signed attestations and attach them to pull requests
+- **Editing activity** — tracks active time, revision passes, and rework ratio without capturing keystrokes or file contents
+- **Test run detection** — notices when you run tests, lint, or build in the terminal
+- **Status bar** — shows session state and elapsed time at a glance
+- **Export & attach** — generate a signed activity snapshot and attach it to your PR
 
 ## Getting Started
 
@@ -39,7 +39,7 @@ Automatically track your development sessions and generate cryptographically sig
 | `Provenance: Checkpoint Session` | Capture metrics without ending the session |
 | `Provenance: Show Session Status` | Display current session details |
 | `Provenance: Inspect Current Session` | View the full session data |
-| `Provenance: Export Attestation` | Generate a signed attestation file |
+| `Provenance: Export Attestation` | Generate a signed activity snapshot |
 
 ## Settings
 
@@ -50,7 +50,7 @@ Automatically track your development sessions and generate cryptographically sig
 
 ## Privacy
 
-This extension collects **aggregate metrics only** — never raw keystrokes, file contents, or clipboard data. All data stays local until you explicitly export an attestation. See the [project README](https://github.com/danielkamen/osstool#privacy) for full details.
+This extension only collects **totals and counts** — never keystrokes, file contents, or clipboard data. Everything stays on your machine until you explicitly export. See the [project README](https://github.com/danielkamen/osstool#privacy) for full details.
 
 ## License
 

@@ -17,9 +17,9 @@ export function renderComment(
   const a = result.attestation;
   const icon = { high: "\u2705", medium: "\u26a0\ufe0f", low: "\ud83d\udfe1" }[confidence];
   const label = {
-    high: "HIGH entropy signal",
-    medium: "MEDIUM entropy signal",
-    low: "LOW entropy signal",
+    high: "Strong editing activity",
+    medium: "Moderate editing activity",
+    low: "Light editing activity",
   }[confidence];
 
   const signalLabel = a.session.signal_source
@@ -34,12 +34,12 @@ export function renderComment(
 | Field | Value |
 |-------|-------|
 | **Attestation** | ${result.allPassed ? sigLine : "Verification issues (see below)"} |
-| **Signal source** | ${a.session.signal_source ?? "vscode"}${signalLabel} |
-| **Review confidence** | ${label} |
+| **Tracked by** | ${a.session.signal_source ?? "vscode"}${signalLabel} |
+| **Activity level** | ${label} |
 | **Active editing time** | ${a.session.dwell_minutes} min across ${a.session.active_files} files |
-| **Entropy score** | ${a.session.entropy_score} |
-| **Edit displacement** | ${a.session.edit_displacement_sum} |
-| **Temporal jitter** | ${a.session.temporal_jitter_ms} ms |
+| **Edit complexity** | ${a.session.entropy_score} |
+| **Change spread** | ${a.session.edit_displacement_sum} |
+| **Pace variation** | ${a.session.temporal_jitter_ms} ms |
 | **Test runs** | ${a.session.test_runs_total} (${a.session.test_failures_observed} failed, ${Math.round(a.session.test_failure_ratio * 100)}% failure rate) |`;
 
   if (a.session.commit_count !== undefined) {
@@ -79,10 +79,10 @@ export function renderServerOnlyReport(
 
 | Field | Value |
 |-------|-------|
-| **Signal source** | server (computed from PR data) |
-| **Review confidence** | ${confidence.toUpperCase()} |
+| **Tracked by** | server (computed from PR data) |
+| **Activity level** | ${confidence.toUpperCase()} |
 | **Estimated active time** | ${serverMetrics.dwell_minutes} min across ${serverMetrics.active_files} files |
-| **Entropy score** | ${serverMetrics.entropy_score} |
+| **Edit complexity** | ${serverMetrics.entropy_score} |
 | **Commits** | ${serverMetrics.commit_count} |
 | **Diff churn** | ${serverMetrics.diff_churn} lines |
 
