@@ -53,7 +53,7 @@ jobs:
   provenance:
     runs-on: ubuntu-latest
     steps:
-      - uses: contrib-provenance/action@v1
+      - uses: danielkamen/osstool/packages/action@v1
 YAML
   echo "  ✓ .github/workflows/provenance.yml"
 fi
