@@ -31125,7 +31125,10 @@ function isHookInstalled(hooksDir, hookName) {
 // src/hooks/ensureSetup.ts
 var import_node_fs6 = __nccwpck_require__(9896);
 var import_promises6 = __nccwpck_require__(1943);
+var import_node_child_process4 = __nccwpck_require__(5317);
+var import_node_util4 = __nccwpck_require__(9023);
 var import_node_path7 = __nccwpck_require__(6928);
+var execFile3 = (0, import_node_util4.promisify)(import_node_child_process4.execFile);
 async function ensureProvenanceSetup(repoRoot) {
   const configPath = getConfigPath(repoRoot);
   if (!(0, import_node_fs6.existsSync)(configPath)) {
@@ -31157,6 +31160,29 @@ async function ensureProvenanceSetup(repoRoot) {
   if (!isHookInstalled(hooksDir, "post-commit")) {
     await installHook(hooksDir, "post-commit", POST_COMMIT_HOOK);
     hooksInstalled = true;
+  }
+  try {
+    const { stdout } = await execFile3(
+      "git",
+      ["config", "--get-all", "remote.origin.push"],
+      { cwd: repoRoot, timeout: 3e3 }
+    );
+    if (!stdout.includes("refs/notes/provenance")) {
+      await execFile3(
+        "git",
+        ["config", "--add", "remote.origin.push", "refs/notes/provenance"],
+        { cwd: repoRoot, timeout: 3e3 }
+      );
+    }
+  } catch {
+    try {
+      await execFile3(
+        "git",
+        ["config", "--add", "remote.origin.push", "refs/notes/provenance"],
+        { cwd: repoRoot, timeout: 3e3 }
+      );
+    } catch {
+    }
   }
   return { configFound: true, directoriesCreated, hooksInstalled };
 }

@@ -1,10 +1,14 @@
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
+import { execFile as execFileCb } from "node:child_process";
+import { promisify } from "node:util";
 import { join } from "node:path";
 import { getProvenanceDir, getSessionsDir, getAttestationsDir, getConfigPath } from "../storage/paths.js";
 import { getGitHooksDir } from "../util/git.js";
 import { installHook, isHookInstalled } from "./installHook.js";
 import { PRE_PUSH_HOOK, POST_COMMIT_HOOK } from "./hookContent.js";
+
+const execFile = promisify(execFileCb);
 
 export interface SetupStatus {
   configFound: boolean;
@@ -56,6 +60,34 @@ export async function ensureProvenanceSetup(repoRoot: string): Promise<SetupStat
   if (!isHookInstalled(hooksDir, "post-commit")) {
     await installHook(hooksDir, "post-commit", POST_COMMIT_HOOK);
     hooksInstalled = true;
+  }
+
+  // Ensure git is configured to push provenance notes alongside branches.
+  // This makes `git push` automatically include refs/notes/provenance.
+  try {
+    const { stdout } = await execFile(
+      "git",
+      ["config", "--get-all", "remote.origin.push"],
+      { cwd: repoRoot, timeout: 3_000 },
+    );
+    if (!stdout.includes("refs/notes/provenance")) {
+      await execFile(
+        "git",
+        ["config", "--add", "remote.origin.push", "refs/notes/provenance"],
+        { cwd: repoRoot, timeout: 3_000 },
+      );
+    }
+  } catch {
+    // --get-all exits 1 if no push refspecs configured yet — add it
+    try {
+      await execFile(
+        "git",
+        ["config", "--add", "remote.origin.push", "refs/notes/provenance"],
+        { cwd: repoRoot, timeout: 3_000 },
+      );
+    } catch {
+      // Non-fatal — pre-push hook will still push notes explicitly
+    }
   }
 
   return { configFound: true, directoriesCreated, hooksInstalled };

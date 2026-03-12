@@ -86,6 +86,9 @@ function mergeMetrics(
 }
 
 export async function runPrePush(repoRoot: string): Promise<void> {
+  // Guard against recursion: pushing notes from within pre-push would re-trigger this hook
+  if (process.env.PROVENANCE_PUSHING_NOTES) return;
+
   const provDir = getProvenanceDir(repoRoot);
   if (!existsSync(provDir)) return;
 
@@ -150,6 +153,25 @@ export async function runPrePush(repoRoot: string): Promise<void> {
       ["notes", "--ref=provenance", "add", "-f", "-m", noteContent, headSha],
       { cwd: repoRoot, timeout: 5_000 },
     );
+
+    // Push the notes ref so the GitHub Action can read it.
+    // Use env var guard to prevent this push from re-triggering the pre-push hook.
+    try {
+      await execFile(
+        "git",
+        ["push", "origin", "refs/notes/provenance"],
+        {
+          cwd: repoRoot,
+          timeout: 10_000,
+          env: { ...process.env, PROVENANCE_PUSHING_NOTES: "1" },
+        },
+      );
+    } catch {
+      // Notes push failed — not fatal, Action falls back to server-computed
+      process.stderr.write(
+        "contrib-provenance: could not push notes ref (attestation stays local)\n",
+      );
+    }
 
     // Log success to stderr (stdout is reserved for git protocol)
     process.stderr.write(

@@ -1,11 +1,6 @@
-.vscode/**
-src/**
-node_modules/**
-tsconfig.json
-.turbo/**
-**/*.ts
-!dist/**/*.js
-**/.git/**
-**/packages/**
-**/turbo.json
-../**
+**
+!dist/extension.js
+!package.json
+!LICENSE.txt
+!readme.md
+!changelog.md

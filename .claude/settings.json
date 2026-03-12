@@ -58,7 +58,10 @@
       "Bash(grep -r \"dimensions\\\\|variants\\\\|targets\" /home/dan/osstool --include=*.ts --include=*.json --include=*.js)",
       "Bash(ls /home/dan/osstool/package.json /home/dan/osstool/packages/*/package.json)",
       "Bash(npx vsce:*)",
-      "Bash(code --install-extension /home/dan/osstool/packages/vscode/contrib-provenance-vscode-0.1.0.vsix)"
+      "Bash(code --install-extension /home/dan/osstool/packages/vscode/contrib-provenance-vscode-0.1.0.vsix)",
+      "Bash(node -e \"require\\(''/home/dan/osstool/packages/cli/dist/postinstall.js''\\)\")",
+      "Bash(chmod +x /home/dan/osstool/scripts/release-tag.sh /home/dan/osstool/scripts/release-vscode.sh /home/dan/osstool/scripts/release-npm.sh)",
+      "Bash(chmod +x /home/dan/osstool/scripts/release.sh)"
     ],
     "additionalDirectories": [
       "/tmp",
