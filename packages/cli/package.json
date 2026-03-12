@@ -1,6 +1,6 @@
 {
   "name": "@contrib-provenance/cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "CLI for Contribution Provenance",
   "bin": {
     "provenance": "dist/index.js"
