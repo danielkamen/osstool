@@ -7,7 +7,7 @@ interface RenderInput {
     allPassed: boolean;
     attestation: AttestationV1;
 }
-export declare function renderComment(result: RenderInput, confidence: ConfidenceLevel, _config: ProvenanceYmlConfig): string;
+export declare function renderComment(result: RenderInput, confidence: ConfidenceLevel, _config: ProvenanceYmlConfig, serverMetrics?: GitDerivedMetrics | null): string;
 export declare function renderServerOnlyReport(serverMetrics: GitDerivedMetrics, confidence: ConfidenceLevel): string;
 export declare function renderReminder(_config: ProvenanceYmlConfig): string;
 export declare function upsertSummaryComment(octokit: any, owner: string, repo: string, prNumber: number, body: string): Promise<void>;

@@ -104,6 +104,9 @@ export interface GitDerivedMetrics {
   entropy_score: number;
   commit_temporal_jitter_ms: number;
   editors_used: string[];
+  hottest_file?: string;
+  file_types_summary?: string;
+  add_delete_ratio?: string;
 }
 
 export type ProvenanceMetrics = SessionMetrics | GitDerivedMetrics;

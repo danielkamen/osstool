@@ -148,7 +148,7 @@ async function run(): Promise<void> {
 
     // 9. Post summary comment
     if (config.notifications.comment_on_pr) {
-      const comment = renderComment(result, confidence, config);
+      const comment = renderComment(result, confidence, config, serverMetrics);
       await upsertSummaryComment(octokit, owner, repo, prNumber, comment);
     }
 

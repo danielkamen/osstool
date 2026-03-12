@@ -30091,9 +30091,11 @@ function wrappy (fn, cb) {
 
 "use strict";
 
+var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __export = (target, all) => {
   for (var name in all)
@@ -30107,6 +30109,14 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // src/index.ts
@@ -30117,6 +30127,8 @@ __export(index_exports, {
   FLUSH_INTERVAL_MS: () => FLUSH_INTERVAL_MS,
   GlobalConfigSchema: () => GlobalConfigSchema,
   IDLE_THRESHOLD_MS: () => IDLE_THRESHOLD_MS,
+  POST_COMMIT_HOOK: () => POST_COMMIT_HOOK,
+  PRE_PUSH_HOOK: () => PRE_PUSH_HOOK,
   PROVENANCE_DIR: () => PROVENANCE_DIR,
   ProjectConfigSchema: () => ProjectConfigSchema,
   STATUS_BAR_UPDATE_MS: () => STATUS_BAR_UPDATE_MS,
@@ -30128,6 +30140,7 @@ __export(index_exports, {
   computeGitMetrics: () => computeGitMetrics,
   computeMetrics: () => computeMetrics,
   discoverSigningKey: () => discoverSigningKey,
+  ensureProvenanceSetup: () => ensureProvenanceSetup,
   formatDuration: () => formatDuration,
   formatTimestamp: () => formatTimestamp,
   getAttestationPath: () => getAttestationPath,
@@ -30140,6 +30153,7 @@ __export(index_exports, {
   getDiffNumstat: () => getDiffNumstat,
   getGitConfig: () => getGitConfig,
   getGitEmail: () => getGitEmail,
+  getGitHooksDir: () => getGitHooksDir,
   getGlobalConfigDir: () => getGlobalConfigDir,
   getGlobalConfigPath: () => getGlobalConfigPath,
   getHeadSha: () => getHeadSha,
@@ -30152,7 +30166,9 @@ __export(index_exports, {
   getSessionsDir: () => getSessionsDir,
   getVerificationPayload: () => getVerificationPayload,
   hashEmail: () => hashEmail,
+  installHook: () => installHook,
   isGitRepo: () => isGitRepo,
+  isHookInstalled: () => isHookInstalled,
   isoNow: () => isoNow,
   parseRemoteToSlug: () => parseRemoteToSlug,
   sha256: () => sha256,
@@ -30358,6 +30374,17 @@ async function getDefaultBranch(repoRoot) {
     }
     return "main";
   }
+}
+async function getGitHooksDir(repoRoot) {
+  try {
+    const custom = await getGitConfig("core.hooksPath", repoRoot);
+    if (custom) {
+      const { resolve } = await Promise.resolve(/* import() */).then(__nccwpck_require__.t.bind(__nccwpck_require__, 6928, 23));
+      return resolve(repoRoot, custom);
+    }
+  } catch {
+  }
+  return (0, import_node_path.join)(repoRoot, ".git", "hooks");
 }
 function parseRemoteToSlug(remoteUrl) {
   const sshMatch = remoteUrl.match(/^git@([^:]+):(.+?)(?:\.git)?$/);
@@ -31037,6 +31064,102 @@ async function discoverSigningKey(repoRoot) {
     return { method: "gpg", keyId: signingKey };
   }
 }
+
+// src/hooks/hookContent.ts
+var PRE_PUSH_HOOK = `#!/bin/sh
+# contrib-provenance pre-push hook
+# Computes provenance metrics and attaches them to the push.
+# This hook NEVER blocks push.
+
+REMOTE="$1"
+
+if command -v npx >/dev/null 2>&1; then
+  npx --yes @contrib-provenance/cli hook pre-push "$@" 2>/dev/null || true
+fi
+
+# Push provenance notes to remote (non-blocking)
+git push "$REMOTE" refs/notes/provenance:refs/notes/provenance --no-verify --force 2>/dev/null || true
+
+exit 0
+`;
+var POST_COMMIT_HOOK = `#!/bin/sh
+# contrib-provenance post-commit hook
+# Records commit markers in active provenance sessions.
+# This hook NEVER blocks commits.
+
+if command -v npx >/dev/null 2>&1; then
+  npx --yes @contrib-provenance/cli hook post-commit 2>/dev/null || true
+fi
+
+exit 0
+`;
+
+// src/hooks/installHook.ts
+var import_node_fs5 = __nccwpck_require__(9896);
+var import_promises5 = __nccwpck_require__(1943);
+var import_node_path6 = __nccwpck_require__(6928);
+async function installHook(hooksDir, hookName, hookContent) {
+  const hookPath = (0, import_node_path6.join)(hooksDir, hookName);
+  if ((0, import_node_fs5.existsSync)(hookPath)) {
+    const existing = await (0, import_promises5.readFile)(hookPath, "utf-8");
+    if (existing.includes("contrib-provenance")) return;
+    const chained = existing.trimEnd() + "\n\n" + hookContent.replace("#!/bin/sh\n", "# contrib-provenance (chained)\n");
+    await (0, import_promises5.writeFile)(hookPath, chained);
+  } else {
+    await (0, import_promises5.writeFile)(hookPath, hookContent);
+  }
+  await (0, import_promises5.chmod)(hookPath, 493);
+}
+function isHookInstalled(hooksDir, hookName) {
+  const hookPath = (0, import_node_path6.join)(hooksDir, hookName);
+  if (!(0, import_node_fs5.existsSync)(hookPath)) return false;
+  try {
+    const { readFileSync } = __nccwpck_require__(9896);
+    const content = readFileSync(hookPath, "utf-8");
+    return content.includes("contrib-provenance");
+  } catch {
+    return false;
+  }
+}
+
+// src/hooks/ensureSetup.ts
+var import_node_fs6 = __nccwpck_require__(9896);
+var import_promises6 = __nccwpck_require__(1943);
+var import_node_path7 = __nccwpck_require__(6928);
+async function ensureProvenanceSetup(repoRoot) {
+  const configPath = getConfigPath(repoRoot);
+  if (!(0, import_node_fs6.existsSync)(configPath)) {
+    return { configFound: false, directoriesCreated: false, hooksInstalled: false };
+  }
+  let directoriesCreated = false;
+  const sessionsDir = getSessionsDir(repoRoot);
+  const attestationsDir = getAttestationsDir(repoRoot);
+  if (!(0, import_node_fs6.existsSync)(sessionsDir)) {
+    await (0, import_promises6.mkdir)(sessionsDir, { recursive: true });
+    directoriesCreated = true;
+  }
+  if (!(0, import_node_fs6.existsSync)(attestationsDir)) {
+    await (0, import_promises6.mkdir)(attestationsDir, { recursive: true });
+    directoriesCreated = true;
+  }
+  const provDir = getProvenanceDir(repoRoot);
+  const gitignorePath = (0, import_node_path7.join)(provDir, ".gitignore");
+  if (!(0, import_node_fs6.existsSync)(gitignorePath)) {
+    await (0, import_promises6.writeFile)(gitignorePath, "sessions/\nattestations/\ncheckpoint-*\n");
+  }
+  let hooksInstalled = false;
+  const hooksDir = await getGitHooksDir(repoRoot);
+  await (0, import_promises6.mkdir)(hooksDir, { recursive: true });
+  if (!isHookInstalled(hooksDir, "pre-push")) {
+    await installHook(hooksDir, "pre-push", PRE_PUSH_HOOK);
+    hooksInstalled = true;
+  }
+  if (!isHookInstalled(hooksDir, "post-commit")) {
+    await installHook(hooksDir, "post-commit", POST_COMMIT_HOOK);
+    hooksInstalled = true;
+  }
+  return { configFound: true, directoriesCreated, hooksInstalled };
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (0);
 
@@ -31345,7 +31468,7 @@ async function run() {
         });
         // 9. Post summary comment
         if (config.notifications.comment_on_pr) {
-            const comment = (0, renderComment_js_1.renderComment)(result, confidence, config);
+            const comment = (0, renderComment_js_1.renderComment)(result, confidence, config, serverMetrics);
             await (0, renderComment_js_1.upsertSummaryComment)(octokit, owner, repo, prNumber, comment);
         }
         // 10. Apply labels
@@ -31419,13 +31542,13 @@ exports.renderServerOnlyReport = renderServerOnlyReport;
 exports.renderReminder = renderReminder;
 exports.upsertSummaryComment = upsertSummaryComment;
 exports.applyLabel = applyLabel;
-function renderComment(result, confidence, _config) {
+function renderComment(result, confidence, _config, serverMetrics) {
     const a = result.attestation;
     const icon = { high: "\u2705", medium: "\u26a0\ufe0f", low: "\ud83d\udfe1" }[confidence];
     const label = {
-        high: "Strong editing activity",
-        medium: "Moderate editing activity",
-        low: "Light editing activity",
+        high: "\ud83e\uddd1\u200d\ud83d\udcbb Human",
+        medium: "\ud83e\udd16 Cyborg",
+        low: "\ud83e\udd16 Bot",
     }[confidence];
     const signalLabel = a.session.signal_source
         ? ` (${a.session.signal_source})`
@@ -31441,15 +31564,17 @@ function renderComment(result, confidence, _config) {
 | **Tracked by** | ${a.session.signal_source ?? "vscode"}${signalLabel} |
 | **Activity level** | ${label} |
 | **Active editing time** | ${a.session.dwell_minutes} min across ${a.session.active_files} files |
-| **Edit complexity** | ${a.session.entropy_score} |
 | **Change spread** | ${a.session.edit_displacement_sum} |
 | **Pace variation** | ${a.session.temporal_jitter_ms} ms |
 | **Test runs** | ${a.session.test_runs_total} (${a.session.test_failures_observed} failed, ${Math.round(a.session.test_failure_ratio * 100)}% failure rate) |`;
-    if (a.session.commit_count !== undefined) {
-        body += `\n| **Commits** | ${a.session.commit_count} |`;
+    if (serverMetrics?.hottest_file) {
+        body += `\n| **Hottest file** | \`${serverMetrics.hottest_file}\` |`;
     }
-    if (a.session.diff_churn !== undefined) {
-        body += `\n| **Diff churn** | ${a.session.diff_churn} lines |`;
+    if (serverMetrics?.file_types_summary) {
+        body += `\n| **File types** | ${serverMetrics.file_types_summary} |`;
+    }
+    if (serverMetrics?.add_delete_ratio) {
+        body += `\n| **Add/Delete ratio** | ${serverMetrics.add_delete_ratio} |`;
     }
     body += `\n| **AI disclosure** | ${a.disclosure ?? "None provided"} |
 | **Tool version** | contrib-provenance v${a.tool_version} |
@@ -31469,26 +31594,56 @@ function renderComment(result, confidence, _config) {
 }
 function renderServerOnlyReport(serverMetrics, confidence) {
     const icon = { high: "\u2705", medium: "\u26a0\ufe0f", low: "\ud83d\udfe1" }[confidence];
-    return `## ${icon} Contribution Provenance Report (Server-Computed)
+    const activityLabel = { high: "\ud83e\uddd1\u200d\ud83d\udcbb Human", medium: "\u26a1 Mixed signals", low: "\ud83e\udd16 Likely automated" }[confidence];
+    const churn = serverMetrics.diff_churn ?? 0;
+    const commits = serverMetrics.commit_count ?? 0;
+    let body = `## ${icon} Contribution Provenance Report (Server-Computed)
 
-| Field | Value |
-|-------|-------|
-| **Tracked by** | server (computed from PR data) |
-| **Activity level** | ${confidence.toUpperCase()} |
-| **Estimated active time** | ${serverMetrics.dwell_minutes} min across ${serverMetrics.active_files} files |
-| **Edit complexity** | ${serverMetrics.entropy_score} |
-| **Commits** | ${serverMetrics.commit_count} |
-| **Diff churn** | ${serverMetrics.diff_churn} lines |
+| | |
+|---|---|
+| \ud83d\udce1 **Source** | Server (computed from PR data) |
+| ${icon} **Activity** | ${activityLabel} |
+| \u23f1\ufe0f **Estimated active time** | ${serverMetrics.dwell_minutes} min across ${serverMetrics.active_files} file(s) |
+| \ud83d\udcdd **Commits** | ${commits} |
+| \ud83d\udd00 **Diff churn** | ${churn} lines |
+| \ud83c\udfaf **Pace variation** | ${serverMetrics.commit_temporal_jitter_ms} ms |`;
+    if (serverMetrics.hottest_file) {
+        body += `\n| \ud83d\udd25 **Hottest file** | \`${serverMetrics.hottest_file}\` |`;
+    }
+    if (serverMetrics.file_types_summary) {
+        body += `\n| \ud83d\udcc2 **File types** | ${serverMetrics.file_types_summary} |`;
+    }
+    if (serverMetrics.add_delete_ratio) {
+        body += `\n| \u2696\ufe0f **Add/Delete ratio** | ${serverMetrics.add_delete_ratio} |`;
+    }
+    body += `
 
-<sub>This report was computed from PR metadata. Install \`@contrib-provenance/cli\` as a devDependency for richer contributor-side metrics.</sub>
-<!-- provenance-summary-v1 -->`.trim();
+> \ud83d\udca1 **Want richer metrics?** Run \`npx provenance doctor --fix\` in your clone, or install the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=caiman.contrib-provenance-vscode) for automatic keystroke-level tracking.
+
+<sub>This report was computed from PR metadata only. Contributor-side attestation provides editing patterns, test runs, and signed proof.</sub>
+<!-- provenance-summary-v1 -->`;
+    return body.trim();
 }
 function renderReminder(_config) {
     return `## \ud83d\udccb Contribution Provenance
 
-No attestation found for this PR.
+No attestation found for this PR. This usually means git hooks weren't set up.
 
-Contribution provenance is **automatic** when \`@contrib-provenance/cli\` is installed as a devDependency. Just \`npm install\` and push normally \u2014 provenance attaches automatically via git hooks.
+### \ud83d\udd27 Quick fix
+
+Run this in your local clone and push again:
+
+\`\`\`sh
+npx provenance doctor --fix
+\`\`\`
+
+### Why did this happen?
+
+Provenance attaches automatically via a **pre-push git hook**. The hook is installed when:
+- \`npm install\` runs and \`@contrib-provenance/cli\` is a devDependency, or
+- The [VS Code extension](https://marketplace.visualstudio.com/items?itemName=caiman.contrib-provenance-vscode) detects \`.provenance/config.json\`
+
+If neither happened, the hook is missing and no attestation gets created.
 
 <sub>This is a gentle reminder, not a requirement. PRs without attestation are reviewed normally.</sub>
 <!-- provenance-summary-v1 -->`.trim();
@@ -31614,6 +31769,34 @@ function computeServerMetrics(input) {
         const churnBoost = Math.log(Math.min(diffChurn, 2000) + 1);
         entropyScore = Math.round((fileBoost * churnBoost) * 100) / 100;
     }
+    // Hottest file: file with most total churn
+    const hottestFile = files.length > 0
+        ? files.reduce((max, f) => (f.additions + f.deletions > max.additions + max.deletions ? f : max), files[0]).filename
+        : undefined;
+    // File types summary: group by extension
+    const extCounts = new Map();
+    for (const f of files) {
+        const ext = f.filename.includes(".") ? "." + f.filename.split(".").pop() : "(no ext)";
+        extCounts.set(ext, (extCounts.get(ext) ?? 0) + 1);
+    }
+    const fileTypesSummary = [...extCounts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([ext, count]) => `${count} ${ext}`)
+        .join(", ") || undefined;
+    // Add/Delete ratio
+    const totalAdditions = files.reduce((s, f) => s + f.additions, 0);
+    const totalDeletions = files.reduce((s, f) => s + f.deletions, 0);
+    let addDeleteRatio;
+    if (totalDeletions === 0 && totalAdditions > 0) {
+        addDeleteRatio = "pure additions";
+    }
+    else if (totalAdditions === 0 && totalDeletions > 0) {
+        addDeleteRatio = "pure deletions";
+    }
+    else if (totalDeletions > 0) {
+        const ratio = Math.round((totalAdditions / totalDeletions) * 10) / 10;
+        addDeleteRatio = ratio >= 1 ? `${ratio}:1 add-heavy` : `1:${Math.round((totalDeletions / totalAdditions) * 10) / 10} delete-heavy`;
+    }
     return {
         signal_source: "git",
         dwell_minutes: dwellMinutes,
@@ -31623,6 +31806,9 @@ function computeServerMetrics(input) {
         entropy_score: entropyScore,
         commit_temporal_jitter_ms: commitTemporalJitter,
         editors_used: [],
+        hottest_file: hottestFile,
+        file_types_summary: fileTypesSummary,
+        add_delete_ratio: addDeleteRatio,
     };
 }
 
@@ -46996,6 +47182,64 @@ exports.NEVER = parseUtil_js_1.INVALID;
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/create fake namespace object */
+/******/ 	(() => {
+/******/ 		var getProto = Object.getPrototypeOf ? (obj) => (Object.getPrototypeOf(obj)) : (obj) => (obj.__proto__);
+/******/ 		var leafPrototypes;
+/******/ 		// create a fake namespace object
+/******/ 		// mode & 1: value is a module id, require it
+/******/ 		// mode & 2: merge all properties of value into the ns
+/******/ 		// mode & 4: return value when already ns object
+/******/ 		// mode & 16: return value when it's Promise-like
+/******/ 		// mode & 8|1: behave like require
+/******/ 		__nccwpck_require__.t = function(value, mode) {
+/******/ 			if(mode & 1) value = this(value);
+/******/ 			if(mode & 8) return value;
+/******/ 			if(typeof value === 'object' && value) {
+/******/ 				if((mode & 4) && value.__esModule) return value;
+/******/ 				if((mode & 16) && typeof value.then === 'function') return value;
+/******/ 			}
+/******/ 			var ns = Object.create(null);
+/******/ 			__nccwpck_require__.r(ns);
+/******/ 			var def = {};
+/******/ 			leafPrototypes = leafPrototypes || [null, getProto({}), getProto([]), getProto(getProto)];
+/******/ 			for(var current = mode & 2 && value; typeof current == 'object' && !~leafPrototypes.indexOf(current); current = getProto(current)) {
+/******/ 				Object.getOwnPropertyNames(current).forEach((key) => (def[key] = () => (value[key])));
+/******/ 			}
+/******/ 			def['default'] = () => (value);
+/******/ 			__nccwpck_require__.d(ns, def);
+/******/ 			return ns;
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__nccwpck_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__nccwpck_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";

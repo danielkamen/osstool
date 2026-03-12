@@ -75,6 +75,35 @@ export function computeServerMetrics(input: ServerMetricsInput): GitDerivedMetri
     entropyScore = Math.round((fileBoost * churnBoost) * 100) / 100;
   }
 
+  // Hottest file: file with most total churn
+  const hottestFile = files.length > 0
+    ? files.reduce((max, f) => (f.additions + f.deletions > max.additions + max.deletions ? f : max), files[0]).filename
+    : undefined;
+
+  // File types summary: group by extension
+  const extCounts = new Map<string, number>();
+  for (const f of files) {
+    const ext = f.filename.includes(".") ? "." + f.filename.split(".").pop()! : "(no ext)";
+    extCounts.set(ext, (extCounts.get(ext) ?? 0) + 1);
+  }
+  const fileTypesSummary = [...extCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([ext, count]) => `${count} ${ext}`)
+    .join(", ") || undefined;
+
+  // Add/Delete ratio
+  const totalAdditions = files.reduce((s, f) => s + f.additions, 0);
+  const totalDeletions = files.reduce((s, f) => s + f.deletions, 0);
+  let addDeleteRatio: string | undefined;
+  if (totalDeletions === 0 && totalAdditions > 0) {
+    addDeleteRatio = "pure additions";
+  } else if (totalAdditions === 0 && totalDeletions > 0) {
+    addDeleteRatio = "pure deletions";
+  } else if (totalDeletions > 0) {
+    const ratio = Math.round((totalAdditions / totalDeletions) * 10) / 10;
+    addDeleteRatio = ratio >= 1 ? `${ratio}:1 add-heavy` : `1:${Math.round((totalDeletions / totalAdditions) * 10) / 10} delete-heavy`;
+  }
+
   return {
     signal_source: "git",
     dwell_minutes: dwellMinutes,
@@ -84,5 +113,8 @@ export function computeServerMetrics(input: ServerMetricsInput): GitDerivedMetri
     entropy_score: entropyScore,
     commit_temporal_jitter_ms: commitTemporalJitter,
     editors_used: [],
+    hottest_file: hottestFile,
+    file_types_summary: fileTypesSummary,
+    add_delete_ratio: addDeleteRatio,
   };
 }
