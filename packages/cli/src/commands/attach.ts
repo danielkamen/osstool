@@ -81,7 +81,7 @@ export const attachCommand: CommandModule<object, AttachArgs> = {
         type: "boolean",
         default: false,
         describe: "Print what would be uploaded without uploading",
-      }),
+      }) as unknown as import("yargs").Argv<AttachArgs>,
   handler: async (argv) => {
     const cwd = process.cwd();
 
