@@ -27,6 +27,8 @@
 
 Open-source maintainers are drowning in AI-generated drive-by PRs — mass-produced patches from agents that never ran the tests, never read the surrounding code, and never iterated on the change. Reviewing these wastes hours and burns out maintainers.
 
+This project was written with AI assitance, but that doesn't matter, this isn't a 1k+ stared open source project.
+
 Contribution Provenance gives contributors a way to **prove they actually did the work**. It tracks editing time, revisions, test runs, and paste patterns locally, then packages them into a signed snapshot attached to the PR. Maintainers can prioritize PRs that show real engagement and let the fire-and-forget ones wait.
 
 **Always optional.** No attestation? No problem — the PR goes through normal review. Attested PRs just get fast-tracked.
