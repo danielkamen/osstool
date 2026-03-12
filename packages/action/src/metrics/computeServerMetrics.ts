@@ -58,13 +58,21 @@ export function computeServerMetrics(input: ServerMetricsInput): GitDerivedMetri
   }
   const commitTemporalJitter = Math.round(stddev(gaps));
 
-  // Entropy score (same adapted formula as core GitMetricsComputer)
+  // Entropy score
   let entropyScore = 0;
   if (commits.length >= 2 && diffChurn > 0) {
+    // Multi-commit: temporal spread × file diversity
     const numerator = activeFiles * commitTemporalJitter;
     const denominator = Math.log(diffChurn + 1) || 1;
     const commitBoost = Math.log(commits.length + 1);
     entropyScore = Math.round(((numerator / denominator) * commitBoost) * 100) / 100;
+  } else if (commits.length === 1 && diffChurn > 0) {
+    // Single commit (squashed PR): score from diff complexity alone.
+    // A real contribution touching multiple files with meaningful churn
+    // should not be penalized for clean git hygiene.
+    const fileBoost = Math.log(activeFiles + 1);
+    const churnBoost = Math.log(Math.min(diffChurn, 2000) + 1);
+    entropyScore = Math.round((fileBoost * churnBoost) * 100) / 100;
   }
 
   return {

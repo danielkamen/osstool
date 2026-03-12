@@ -15,11 +15,19 @@ import {
 } from "@contrib-provenance/core";
 import type { ProjectConfig } from "@contrib-provenance/core";
 import { PRE_PUSH_HOOK, POST_COMMIT_HOOK } from "../hooks/pre-push.js";
+import {
+  writeProvenanceYml,
+  writeWorkflow,
+} from "../util/scaffoldGitHub.js";
+import { addDevDependency } from "../util/packageManager.js";
 
 interface InitArgs {
   signing: "gpg" | "ssh" | "auto" | "none";
   hooks: boolean;
   force: boolean;
+  minimal: boolean;
+  "server-only": boolean;
+  "skip-install": boolean;
   "base-branch"?: string;
 }
 
@@ -44,6 +52,23 @@ export const initCommand: CommandModule<object, InitArgs> = {
         default: false,
         describe: "Reinitialize even if .provenance/ exists",
       })
+      .option("minimal", {
+        type: "boolean",
+        default: false,
+        describe:
+          "Only create .provenance/ and hooks — skip GitHub Action setup",
+      })
+      .option("server-only", {
+        type: "boolean",
+        default: false,
+        describe:
+          "Only generate GitHub Action files — no .provenance/, hooks, or devDependency. Ideal for non-npm repos.",
+      })
+      .option("skip-install", {
+        type: "boolean",
+        default: false,
+        describe: "Skip adding @contrib-provenance/cli as a devDependency",
+      })
       .option("base-branch", {
         type: "string",
         describe: "Base branch to compare against (auto-detected if omitted)",
@@ -56,6 +81,39 @@ export const initCommand: CommandModule<object, InitArgs> = {
       process.exit(1);
     }
 
+    const results: string[] = [];
+
+    // --- Server-only mode: just the GitHub Action files ---
+    if (argv["server-only"]) {
+      const yml = await writeProvenanceYml(cwd, argv.force);
+      if (yml.created) {
+        results.push("  \u2713 .github/provenance.yml");
+      } else {
+        results.push("  - .github/provenance.yml (already exists)");
+      }
+
+      const wf = await writeWorkflow(cwd, argv.force);
+      if (wf.created) {
+        results.push("  \u2713 .github/workflows/provenance.yml");
+      } else {
+        results.push("  - .github/workflows/provenance.yml (already exists)");
+      }
+
+      console.log("\nProvenance initialized (server-only):\n");
+      for (const line of results) {
+        console.log(line);
+      }
+
+      console.log("\nThe GitHub Action will score PRs using server-side metrics");
+      console.log("(commit patterns, file diffs, temporal analysis).");
+      console.log("No client-side tooling required for contributors.\n");
+      console.log("Next steps:");
+      console.log("  1. Commit the generated files and push");
+      console.log("  2. PRs will be automatically scored and labeled");
+      return;
+    }
+
+    // --- Full mode ---
     const provDir = getProvenanceDir(cwd);
     if (existsSync(provDir) && !argv.force) {
       console.error(
@@ -128,12 +186,49 @@ export const initCommand: CommandModule<object, InitArgs> = {
       await writeFile(getConfigPath(cwd), JSON.stringify(config, null, 2));
     }
 
-    console.log(`Provenance initialized in ${provDir}`);
-    console.log(`  Remote: ${remote}`);
-    console.log(`  Base branch: ${baseBranch}`);
-    console.log(`  Signing: ${argv.signing}`);
+    results.push("  \u2713 .provenance/config.json");
+
     if (argv.hooks) {
-      console.log("  Hooks: pre-push, post-commit installed");
+      results.push("  \u2713 Git hooks (pre-push, post-commit)");
     }
+
+    // GitHub integration (unless --minimal)
+    if (!argv.minimal) {
+      const yml = await writeProvenanceYml(cwd, argv.force);
+      if (yml.created) {
+        results.push("  \u2713 .github/provenance.yml");
+      } else {
+        results.push("  - .github/provenance.yml (already exists)");
+      }
+
+      const wf = await writeWorkflow(cwd, argv.force);
+      if (wf.created) {
+        results.push("  \u2713 .github/workflows/provenance.yml");
+      } else {
+        results.push("  - .github/workflows/provenance.yml (already exists)");
+      }
+
+      if (!argv["skip-install"]) {
+        const installed = await addDevDependency(cwd);
+        if (installed) {
+          results.push("  \u2713 @contrib-provenance/cli added as devDependency");
+        } else {
+          results.push(
+            "  - Could not add devDependency (no package.json found or install failed)",
+          );
+        }
+      }
+    }
+
+    console.log("\nProvenance initialized:\n");
+    for (const line of results) {
+      console.log(line);
+    }
+
+    console.log("\nNext steps:");
+    console.log("  1. Commit the generated files and push");
+    console.log(
+      "  2. Contributors just clone + npm install \u2014 tracking is automatic",
+    );
   },
 };

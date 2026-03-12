@@ -40,4 +40,35 @@ describe("computeConfidence", () => {
     });
     expect(result).toBe("low");
   });
+
+  it("returns medium for server-only single-commit PR with meaningful diff", () => {
+    // Squashed single-commit PR: 0 dwell, but entropy derived from
+    // file spread + diff churn should still qualify for medium
+    const result = computeConfidence({
+      metrics: {
+        dwell_minutes: 0,
+        entropy_score: 4.0,
+        test_runs_total: 0,
+        signal_source: "server",
+      },
+      config: defaultConfig,
+      verificationPassed: true,
+    });
+    expect(result).toBe("medium");
+  });
+
+  it("returns low for server-only trivial single-file PR", () => {
+    // Tiny single-file PR with minimal churn — low entropy
+    const result = computeConfidence({
+      metrics: {
+        dwell_minutes: 0,
+        entropy_score: 1.0,
+        test_runs_total: 0,
+        signal_source: "server",
+      },
+      config: defaultConfig,
+      verificationPassed: true,
+    });
+    expect(result).toBe("low");
+  });
 });

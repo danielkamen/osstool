@@ -34,48 +34,53 @@ Contribution Provenance gives contributors a way to **prove they actually did th
 
 ## Quickstart
 
-### For developers
+### For maintainers (one command)
 
 ```bash
-# Install the CLI
+# Install the CLI and set up everything in one shot
 npm install -g @contrib-provenance/cli
-
-# One-time repo setup (creates .provenance/ config, installs pre-push hook)
-provenance init --signing auto --hooks
-
-# Start a coding session (or use the VS Code extension for auto-tracking)
-provenance session start
-
-# ... write code, run tests, iterate ...
-
-provenance session end
-
-# Generate a signed snapshot and attach it to your PR
-provenance export
-provenance attach <PR-URL>
+provenance init
 ```
 
-### For maintainers
+That single `provenance init` command:
+- Creates `.provenance/` config (committed to repo so contributors get auto-tracking)
+- Generates `.github/provenance.yml` with sensible defaults
+- Generates `.github/workflows/provenance.yml` (the GitHub Action)
+- Adds `@contrib-provenance/cli` as a devDependency
+- Installs git hooks (pre-push, post-commit)
 
-Add a GitHub Action and config to your repo:
+Commit the generated files and push. You're done.
 
-```yaml
-# .github/provenance.yml
-version: 1
-mode: oss
-labels:
-  high: provenance-high
-  medium: provenance-medium
-  low: provenance-low
-signals:
-  min_active_minutes: 15
-  min_revision_passes: 1
-  min_rework_ratio: 0.25
-notifications:
-  comment_on_pr: true
+Use `provenance init --minimal` if you only want the `.provenance/` directory and hooks without the GitHub Action setup.
+
+### For non-npm repos (Rust, Python, Go, etc.)
+
+No Node.js required in your project. One shell command sets up server-side PR scoring:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/danielkamen/osstool/main/scripts/setup.sh | sh
 ```
 
-Then add the GitHub Action to your CI workflow. It checks incoming PRs for activity snapshots and labels them so you can prioritize real contributions over drive-by agent PRs.
+Or if you have Node installed locally (without adding it to your project):
+
+```bash
+npx @contrib-provenance/cli init --server-only
+```
+
+Both generate the GitHub Action config and workflow. The Action scores PRs using **server-side metrics only** (commit patterns, file diffs, temporal analysis) — no client-side tooling required for contributors at all.
+
+### For contributors (zero setup)
+
+**npm projects:** Contributors don't need to install anything or learn any commands. When they clone your repo and run `npm install`, everything is automatic:
+
+1. **Clone & install** — `npm install` installs the CLI as a devDependency, which auto-configures git hooks
+2. **Code normally** — the VS Code extension (if installed) tracks editing time, test runs, and iteration patterns silently
+3. **Push** — the pre-push hook automatically builds and signs a provenance attestation
+4. **Open a PR** — the GitHub Action reads the attestation and labels the PR with a confidence level
+
+No manual `provenance` commands needed. The VS Code extension provides richer tracking data but is optional — git-derived metrics work automatically via the hooks.
+
+**Non-npm projects:** Contributors don't need to do anything. The GitHub Action computes metrics server-side from the PR's commit history and file diffs. Richer client-side metrics are available if contributors install the VS Code extension, but it's entirely optional.
 
 ## How It Works
 
@@ -266,7 +271,7 @@ The monorepo uses [Turbo](https://turbo.build) for task orchestration. Package d
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please open an issue or pull request.
 
 ## License
 

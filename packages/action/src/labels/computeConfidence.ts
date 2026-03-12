@@ -23,12 +23,13 @@ export function computeConfidence(input: ConfidenceInput): ConfidenceLevel {
   // Must pass verification to be anything above "low"
   if (!input.verificationPassed) return "low";
 
-  // Server-only metrics cap at medium
+  // Server-only metrics cap at medium.
+  // Two paths: temporal spread (multi-commit) OR diff complexity
+  // alone (single squashed commit with real work).
   if (signalSource === "server") {
-    const isMedium =
-      metrics.entropy_score >= s.min_entropy_score * 0.5 &&
-      metrics.dwell_minutes >= Math.max(10, s.min_dwell_minutes * 0.5);
-    return isMedium ? "medium" : "low";
+    const hasEntropySignal =
+      metrics.entropy_score >= s.min_entropy_score * 0.5;
+    return hasEntropySignal ? "medium" : "low";
   }
 
   // HIGH: strong entropy + engaged session + test signal
