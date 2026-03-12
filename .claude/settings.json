@@ -49,7 +49,10 @@
       "Bash(npm test:*)",
       "Bash(git push:*)",
       "Bash(rm -rf node_modules packages/*/node_modules)",
-      "Bash(npm ci:*)"
+      "Bash(npm ci:*)",
+      "Bash(grep -r \"postinstall\\\\|preinstall\\\\|husky\" /home/dan/osstool/package*.json)",
+      "Bash(find /home/dan/osstool -path */test* -name *init* -o -path */test* -name *setup*)",
+      "Bash(grep -r \"CONTRIBUTING\" /home/dan/osstool --maxdepth 1)"
     ],
     "additionalDirectories": [
       "/tmp",
